@@ -5,7 +5,7 @@
 按照提示激活环境：
 - Windows的PowerShell:  .\.venv\Scripts\Activate.ps1
 - Windows的cmd:         .venv\Scripts\activate.bat
-- Linux/Mac:            source venv/bin/activate
+- Linux/Mac:            source .venv/bin/activate
 
 用户运行测试：
 # Windows
