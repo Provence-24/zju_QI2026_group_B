@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "surface_code_study"
+version = "0.1.0"
+description = "Surface code logical error rate study across superconducting, neutral atom, and ion trap platforms"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "stim>=1.11",
+    "pymatching>=2.0",
+    "numpy",
+    "matplotlib",
+    "scipy",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["surface_code_study*"]
+exclude = ["results*", "qi2026_project*"]
