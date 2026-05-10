@@ -33,7 +33,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from surface_code_study.circuit_builder import build_surface_code_circuit
 from surface_code_study.platforms import PLATFORMS
 from surface_code_study.simulator import (
+    DEFAULT_DECODER,
     SimulationResult,
+    get_decoder,
     run_adaptive_experiment,
 )
 
@@ -69,10 +71,12 @@ def scan_platform(
             p=p_fixed,
         )
 
+        decoder = get_decoder(DEFAULT_DECODER, circuit)
         result = run_adaptive_experiment(
             circuit=circuit,
             num_rounds=rounds,
             d=d,
+            decoder=decoder,
             platform_name=platform_name,
             p_scale=p_fixed,
             min_logical_errors=MIN_ERRORS,

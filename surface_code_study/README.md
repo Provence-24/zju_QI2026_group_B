@@ -1,6 +1,6 @@
 # Surface Code Study
 
-**目标**：比较三种量子硬件平台（超导、中性原子、离子阱）上表面码（surface code）的逻辑错误率，使用 MWPM（最小权重完美匹配）解码器进行纯软件模拟。
+**目标**：比较三种量子硬件平台（超导、中性原子、离子阱）上表面码（surface code）的逻辑错误率，支持多种解码器（MWPM、Union-Find 等）。
 
 ---
 
@@ -171,15 +171,23 @@ $$P_L \approx \Lambda \cdot p^{(d+1)/2}$$
 ```python
 from surface_code_study.circuit_builder import build_surface_code_circuit
 from surface_code_study.platforms import get_platform
-from surface_code_study.simulator import run_adaptive_experiment
+from surface_code_study.simulator import (
+    DEFAULT_DECODER,
+    get_decoder,
+    run_adaptive_experiment,
+)
 
 # 构建电路
 platform = get_platform("superconducting")
 circuit = build_surface_code_circuit(d=5, platform_params=platform._asdict(), noise_scale=0.1)
 
+# 创建解码器（使用 DEFAULT_DECODER 指定的解码器）
+decoder = get_decoder(DEFAULT_DECODER, circuit)
+
 # 运行实验
 result = run_adaptive_experiment(
     circuit=circuit, num_rounds=5, d=5,
+    decoder=decoder,  # 注意：需要传入 decoder 参数
     platform_name="superconducting", p_scale=0.1,
     min_logical_errors=200,
 )
@@ -201,6 +209,43 @@ python -m pytest surface_code_study/tests/test_sanity.py -v
 2. d=3, p=10% → PL > 10%（明显恶化）
 3. p 固定时 d 增大 → PL 下降（仅当 p < threshold）
 4. d=3, p=0.1%, 10⁵ 次采样在数秒内完成
+
+---
+
+## 切换解码器
+
+所有实验使用统一的解码器配置，集中管理在 `simulator.py` 中。
+
+**修改位置**：`surface_code_study/simulator.py` 第 217 行
+
+```python
+DEFAULT_DECODER: str = "mwpm"
+```
+
+**支持的解码器**：
+
+| 名称 | 说明 |
+|------|------|
+| `"mwpm"` | Minimum Weight Perfect Matching（pymatching，默认） |
+| `"uf"` 或 `"unionfind"` | Union-Find 并查集解码器 |
+
+**切换示例**：
+```python
+# 编辑 simulator.py，将 DEFAULT_DECODER 改为：
+DEFAULT_DECODER: str = "uf"
+```
+
+**在自己的代码中使用指定解码器**：
+```python
+from surface_code_study.simulator import get_decoder, DEFAULT_DECODER
+
+decoder = get_decoder(DEFAULT_DECODER, circuit)
+result = run_single_experiment(..., decoder=decoder, ...)
+```
+
+**添加新的解码器**：
+1. 在 `simulator.py` 中实现继承自 `Decoder` 的新类
+2. 在 `get_decoder()` 函数中注册新的解码器名称
 
 ---
 

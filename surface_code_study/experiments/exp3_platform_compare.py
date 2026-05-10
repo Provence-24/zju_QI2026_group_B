@@ -25,6 +25,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from surface_code_study.circuit_builder import build_surface_code_circuit
 from surface_code_study.platforms import PLATFORMS
 from surface_code_study.simulator import (
+    DEFAULT_DECODER,
+    get_decoder,
     run_adaptive_experiment,
 )
 
@@ -56,8 +58,10 @@ def scan_pl_vs_d(
             d=d, platform_params=platform_params,
             rounds=rounds, noise_scale=p_scale,
         )
+        decoder = get_decoder(DEFAULT_DECODER, circuit)
         res = run_adaptive_experiment(
             circuit=circuit, num_rounds=rounds, d=d,
+            decoder=decoder,
             platform_name=platform_name, p_scale=p_scale,
             min_logical_errors=MIN_ERRORS,
         )
@@ -100,8 +104,10 @@ def estimate_d_for_pl_target(
             d=d, platform_params=platform_params,
             rounds=d, p=p,
         )
+        decoder = get_decoder(DEFAULT_DECODER, circuit)
         res = run_adaptive_experiment(
             circuit=circuit, num_rounds=d, d=d,
+            decoder=decoder,
             platform_name=platform_name, p_scale=p,
             min_logical_errors=50, max_shots=1_000_000,
         )
