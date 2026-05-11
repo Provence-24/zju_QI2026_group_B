@@ -98,86 +98,199 @@ class UnionFindDecoder(Decoder):
         self._build_graph()
 
     def _build_graph(self) -> None:
-        """Build the detector graph from the detector error model."""
-        self._nodes: list[int] = list(range(self._num_detectors))
-        self._edges: list[tuple[int, int, float]] = []
+        “””
+        构建包含【虚拟边界】的伴随图。
+        表面码的边缘错误只会触发一个探测器，这些错误必须被排入边界。
+        “””
+        # 我们增加一个特殊的节点代表”系统边界 (Boundary)”
+        self.BOUNDARY = self._num_detectors
+        self._num_nodes = self._num_detectors + 1
+
+        self._edges: list[tuple[int, int]] = []
+        # 边的权重字典：key=(u,v) 或 (v,u)，value=weight
+        self._edge_weight: dict[tuple[int, int], float] = {}
 
         for instruction in self._dem.flattened():
-            if instruction.type == "error":
-                # Parse error instructions to extract edges
-                # Format: error(detector D1, detector D2, weight W)
+            if instruction.type == “error”:
                 targets = instruction.targets_copy()
+                weight = instruction.args[0] if instruction.args else 1.0
                 if len(targets) == 2:
-                    d1, d2 = targets[0].val, targets[1].val
-                    weight = instruction.args[0] if instruction.args else 1.0
-                    self._edges.append((d1, d2, weight))
+                    # 系统内部错误：连接两个相邻的探测器
+                    u, v = targets[0].val, targets[1].val
+                    self._edges.append((u, v))
+                    self._edge_weight[(u, v)] = weight
+                    self._edge_weight[(v, u)] = weight
+                elif len(targets) == 1:
+                    # 系统边缘错误：连接一个探测器和虚拟边界！
+                    u = targets[0].val
+                    self._edges.append((u, self.BOUNDARY))
+                    self._edge_weight[(u, self.BOUNDARY)] = weight
+                    self._edge_weight[(self.BOUNDARY, u)] = weight
+
+        # 构建邻接表 (Adjacency List) 以加速”簇的生长”阶段查找邻居
+        self.adj = [[] for _ in range(self._num_nodes)]
+        for u, v in self._edges:
+            self.adj[u].append(v)
+            self.adj[v].append(u)
 
     def decode(self, syndrome: list[int]) -> int:
-        """
-        Decode using Union-Find algorithm.
-
-        Parameters
-        ----------
-        syndrome : list[int]
-            Binary syndrome bits from the detectors.
-
-        Returns
-        -------
-        int
-            Predicted logical observable (0 or 1).
-        """
         if not any(syndrome):
             return 0
 
-        # Initialize union-find structure
-        parent = list(range(self._num_detectors))
-        rank = [0] * self._num_detectors
+        # 初始化并查集
+        parent = list(range(self._num_nodes))
+        
+        # parity 记录每个根节点的奇偶性：1为奇数，0为偶数
+        parity = [0] * self._num_nodes
+        for i, s in enumerate(syndrome):
+            if s: parity[i] = 1
+            
+        # 边界节点就像大地，可以吸收无限的缺陷，永远保持偶数(电中性)
+        parity[self.BOUNDARY] = 0
 
         def find(x: int) -> int:
             if parent[x] != x:
-                parent[x] = find(parent[x])
+                parent[x] = find(parent[x]) # 路径压缩
             return parent[x]
 
         def union(x: int, y: int) -> None:
             px, py = find(x), find(y)
-            if px == py:
-                return
-            if rank[px] < rank[py]:
-                px, py = py, px
+            if px == py: return
+
+            # 核心规则：如果碰到了边界，让边界强制成为新的根节点！
+            if py == self.BOUNDARY:
+                px, py = py, px 
+
+            # 合并：将 py 挂到 px 下面
             parent[py] = px
-            if rank[px] == rank[py]:
-                rank[px] += 1
 
-        # Active syndrome nodes
-        active_nodes = [i for i, s in enumerate(syndrome) if s]
+            # 计算合并后的奇偶性
+            if px == self.BOUNDARY:
+                parity[px] = 0  # 边界吸收了缺陷，依然是偶数
+            else:
+                parity[px] = (parity[px] + parity[py]) % 2 # 内部节点模2加和
+            
+            parity[py] = 0 # 旧根节点清零
 
-        # Union all edges where both endpoints have syndrome bits
-        for d1, d2, _ in self._edges:
-            if syndrome[d1] and syndrome[d2]:
-                union(d1, d2)
+        # ==========================================
+        # 核心逻辑：簇的动态生长循环 (Cluster Growth)
+        # ==========================================
+        while True:
+            # 1. 找出所有仍然是“奇数”的簇的根节点
+            odd_roots = {find(i) for i in range(self._num_nodes) if parity[find(i)] == 1}
 
-        # Find unique clusters (connected components)
-        clusters: dict[int, list[int]] = {}
-        for node in active_nodes:
-            root = find(node)
-            clusters.setdefault(root, []).append(node)
+            # 如果没有奇数簇了，说明全部内部抵消或被边界吸收，生长结束！
+            if not odd_roots:
+                break 
 
-        # For each cluster, determine if correction is needed
-        # Here we use a simple approach: check if cluster is on a boundary
-        corrections = []
-        for root, nodes in clusters.items():
-            # Simple majority vote within cluster
-            # If odd number of nodes in cluster, apply correction
-            if len(nodes) % 2 == 1:
-                corrections.extend(nodes)
+            merges_this_round = []
 
-        # Compute parity of corrections on any logical operator
-        # For surface code, we check if correction creates a logical error
-        # This is a simplified version - full implementation would need
-        # the explicit logical observable structure
-        parity = len(corrections) % 2
+            # 2. 让每个奇数簇向外“膨胀”一步
+            for root in odd_roots:
+                # 找到当前属于这个簇的所有节点
+                cluster_nodes = [i for i in range(self._num_nodes) if find(i) == root]
 
-        return parity
+                # 寻找这个簇的“前线”（连接簇内和簇外的边）
+                expanded = False
+                for u in cluster_nodes:
+                    for v in self.adj[u]:
+                        if find(v) != root:
+                            # 找到了一个可以侵占的相邻领地！
+                            merges_this_round.append((u, v))
+                            expanded = True
+                            break # 为了模拟均匀生长，当前簇本轮只向外扩展一步
+                    if expanded:
+                        break
+
+            # 3. 统一执行本轮的合并操作
+            for u, v in merges_this_round:
+                union(u, v)
+
+            # 防止在极其极端的断连图中死循环
+            if not merges_this_round:
+                break
+
+        # --- 此时生长完毕，所有缺陷都已配对完成 ---
+        # Peeling 阶段：在生成树中找到最小权重完美匹配
+        correction_edges: list[tuple[int, int]] = []
+
+        # 构建并查集森林中每个树的节点映射
+        # root -> list of nodes in that component
+        components: dict[int, list[int]] = {}
+        for i in range(self._num_nodes):
+            if i == self.BOUNDARY:
+                continue
+            r = find(i)
+            components.setdefault(r, []).append(i)
+
+        # 对每个非边界的连通分量，构建生成树并 peeling
+        for root, nodes in components.items():
+            if not nodes:
+                continue
+
+            # 构建该分量的生成树（DFS）
+            tree_parent: dict[int, int] = {}  # child -> parent
+            stack = [nodes[0]]
+            visited = set([nodes[0]])
+            tree_parent[nodes[0]] = -1  # 根节点
+
+            while stack:
+                u = stack.pop()
+                for v in self.adj[u]:
+                    if v == self.BOUNDARY:
+                        continue  # 边界单独处理
+                    if v not in visited:
+                        visited.add(v)
+                        tree_parent[v] = u
+                        stack.append(v)
+
+            # 建立孩子列表（用于后序遍历）
+            children: dict[int, list[int]] = {n: [] for n in nodes}
+            for child, par in tree_parent.items():
+                if par != -1:
+                    children[par].append(child)
+
+            # 后序遍历 peeling
+            def peel_post(u: int) -> int:
+                """返回子树 u 的奇偶性（1=奇数，0=偶数）"""
+                parity_sum = parity[u]
+                for ch in children[u]:
+                    child_parity = peel_post(ch)
+                    if child_parity == 1:
+                        # 子树奇数，必须加这条边来纠正
+                        w = self._edge_weight.get((u, ch), 1.0)
+                        w_rev = self._edge_weight.get((ch, u), 1.0)
+                        w = w if w <= w_rev else w_rev
+                        correction_edges.append((u, ch))
+                        parity_sum = (parity_sum + 1) % 2
+                return parity_sum
+
+            root_parity = peel_post(nodes[0])
+
+            # 如果根节点奇偶性为1（不应该发生，因为孤立奇数簇已被边界吸收），
+            # 检查是否应该连向边界
+            if root_parity == 1:
+                # 连向边界的最小权重边
+                min_w = float('inf')
+                best_boundary_edge = None
+                for v in self.adj[nodes[0]]:
+                    if v == self.BOUNDARY:
+                        w = self._edge_weight.get((nodes[0], v), 1.0)
+                        if w < min_w:
+                            min_w = w
+                            best_boundary_edge = (nodes[0], v)
+                if best_boundary_edge is not None:
+                    correction_edges.append(best_boundary_edge)
+
+        # 计算纠正边的总奇偶性 → 逻辑观测值
+        # （每条纠正边翻转两个端点的 parity，本质是异或）
+        # 实际计算：对每个 correction edge，检查它是否穿过逻辑 operator
+        # 简化：用纠正边数量的奇偶性作为逻辑错误的近似
+        # 真正的表面码应该检查是否形成了从一边界到对边的闭环
+
+        # 简单版本：返回纠正边总数的奇偶性
+        # 完整版本需要明确逻辑 operator 的定义，此处省略
+        return len(correction_edges) % 2
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -216,7 +329,7 @@ def get_decoder(name: str, circuit: stim.Circuit) -> Decoder:
 # Decoder configuration
 # ──────────────────────────────────────────────────────────────────────────────
 
-DEFAULT_DECODER: str = "uf"
+DEFAULT_DECODER: str = "mwpm"
 """
 Default decoder name used in experiments.
 

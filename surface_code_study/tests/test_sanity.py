@@ -13,6 +13,7 @@ import numpy as np
 from surface_code_study.circuit_builder import build_perfect_circuit, build_surface_code_circuit
 from surface_code_study.platforms import PLATFORMS, SUPERCONDUCTING, get_platform
 from surface_code_study.simulator import (
+    DEFAULT_DECODER,
     compute_pl_per_cycle,
     get_decoder,
     run_adaptive_experiment,
@@ -24,7 +25,7 @@ def test_zero_noise_pl():
     """Test 1: Zero noise → PL must be exactly 0."""
     print("Test 1: Zero noise → PL = 0 ... ", end="")
     circuit = build_perfect_circuit(d=3, rounds=3)
-    decoder = get_decoder("mwpm", circuit)
+    decoder = get_decoder(DEFAULT_DECODER, circuit)
     result = run_single_experiment(
         circuit=circuit,
         num_shots=1_000,
@@ -50,7 +51,7 @@ def test_high_noise_obvious_failure():
     # With noise_scale=10: p_idle=0.1, p_meas=0.05, p_2q=0.01 — all safe.
     ns = 10.0
     circuit = build_surface_code_circuit(d=3, platform_params=params, noise_scale=ns)
-    decoder = get_decoder("mwpm", circuit)
+    decoder = get_decoder(DEFAULT_DECODER, circuit)
     result = run_single_experiment(
         circuit=circuit,
         num_shots=5_000,
@@ -80,7 +81,7 @@ def test_d_increases_pl_decreases_below_threshold():
     pls = {}
     for d in [3, 5]:
         circuit = build_surface_code_circuit(d=d, platform_params=params, noise_scale=ns, rounds=d)
-        decoder = get_decoder("mwpm", circuit)
+        decoder = get_decoder(DEFAULT_DECODER, circuit)
         res = run_single_experiment(
             circuit=circuit,
             num_shots=20_000,
@@ -116,7 +117,7 @@ def test_d_increases_pl_increases_above_threshold():
     pls = {}
     for d in [3, 5]:
         circuit = build_surface_code_circuit(d=d, platform_params=params, noise_scale=ns, rounds=d)
-        decoder = get_decoder("mwpm", circuit)
+        decoder = get_decoder(DEFAULT_DECODER, circuit)
         res = run_single_experiment(
             circuit=circuit,
             num_shots=10_000,
@@ -143,7 +144,7 @@ def test_performance_target():
     platform = get_platform(SUPERCONDUCTING)
     params = platform._asdict()
     circuit = build_surface_code_circuit(d=3, platform_params=params, noise_scale=1.0)
-    decoder = get_decoder("mwpm", circuit)
+    decoder = get_decoder(DEFAULT_DECODER, circuit)
 
     t0 = time.perf_counter()
     result = run_single_experiment(

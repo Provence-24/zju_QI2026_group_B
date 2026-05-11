@@ -216,7 +216,7 @@ python -m pytest surface_code_study/tests/test_sanity.py -v
 
 所有实验使用统一的解码器配置，集中管理在 `simulator.py` 中。
 
-**修改位置**：`surface_code_study/simulator.py` 第 217 行
+**修改位置**：`surface_code_study/simulator.py` 第 246 行
 
 ```python
 DEFAULT_DECODER: str = "mwpm"
