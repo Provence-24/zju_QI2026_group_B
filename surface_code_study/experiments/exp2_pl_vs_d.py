@@ -19,6 +19,7 @@ results/exp2_pl_vs_d.png
 results/exp2_pl_vs_d.pdf
 """
 
+import argparse
 import json
 import sys
 import time
@@ -39,6 +40,38 @@ from surface_code_study.simulator import (
     run_adaptive_experiment,
 )
 
+
+def build_circuit(platform_name, platform_params, d, rounds, noise_scale, p, use_compiler):
+    """Build circuit — either via stim built-in or PlatformCompiler."""
+    if use_compiler:
+        from surface_code_study.compilers import get_compiler
+
+        params = dict(platform_params)
+        if p is not None:
+            p_val = float(p)
+            scales = params.get('relative_scales', {})
+            params['p_gate_2q'] = p_val
+            params['p_gate_1q'] = p_val * scales.get('gate_1q', 0.3)
+            params['p_meas'] = p_val * scales.get('meas', 5.0)
+            params['p_reset'] = p_val * scales.get('reset', 0.1)
+        else:
+            scale = float(noise_scale)
+            params['p_gate_2q'] = scale * float(params['p_gate_2q'])
+            params['p_gate_1q'] = scale * float(params['p_gate_1q'])
+            params['p_meas'] = scale * float(params['p_meas'])
+            params['p_reset'] = scale * float(params['p_reset'])
+
+        compiler = get_compiler(platform_name, distance=d, noise_params=params)
+        return compiler.build_memory_circuit(num_rounds=rounds)
+    else:
+        return build_surface_code_circuit(
+            d=d,
+            platform_params=platform_params,
+            rounds=rounds,
+            noise_scale=noise_scale,
+            p=p,
+        )
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 P_FIXED: float = 0.001       # 0.1% physical 2Q gate error rate (p = p_gate_2q)
@@ -46,8 +79,6 @@ D_VALUES: list[int] = [3, 5, 7, 9]
 MIN_ERRORS: int = 100
 
 RESULTS_DIR = Path(__file__).parent.parent.parent / "results"
-RESULTS_DIR.mkdir(exist_ok=True)
-
 
 # ── Core scan ─────────────────────────────────────────────────────────────────
 
@@ -56,6 +87,7 @@ def scan_platform(
     platform_params: dict,
     d_values: list[int],
     p_fixed: float,
+    use_compiler: bool = False,
 ) -> list[SimulationResult]:
     """Scan d for one platform at fixed p."""
     results = []
@@ -64,11 +96,9 @@ def scan_platform(
         print(f"  {platform_name:16s}  d={d} ... ", end="", flush=True)
         t0 = time.perf_counter()
 
-        circuit = build_surface_code_circuit(
-            d=d,
-            platform_params=platform_params,
-            rounds=rounds,
-            p=p_fixed,
+        circuit = build_circuit(
+            platform_name, platform_params, d=d, rounds=rounds,
+            noise_scale=1.0, p=p_fixed, use_compiler=use_compiler,
         )
 
         decoder = get_decoder(DEFAULT_DECODER, circuit)
@@ -219,14 +249,23 @@ def plot_results(
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    print(f"=== Experiment 2: PL vs d  (p_fixed={P_FIXED:.1%}) ===\n")
+    parser = argparse.ArgumentParser(description="Experiment 2: PL vs d")
+    parser.add_argument("--use_compiler", action="store_true",
+                        help="Use PlatformCompiler instead of stim built-in circuit")
+    args = parser.parse_args()
+
+    print(f"=== Experiment 2: PL vs d  (p_fixed={P_FIXED:.1%}, compiler={args.use_compiler}) ===\n")
+
+    results_dir = RESULTS_DIR / ("compiler" if args.use_compiler else "builtin")
+    results_dir.mkdir(parents=True, exist_ok=True)
 
     all_results: dict[str, list[SimulationResult]] = {}
 
     for platform_name, params in PLATFORMS.items():
         print(f"\nPlatform: {platform_name}")
         pdict = params._asdict()
-        results = scan_platform(platform_name, pdict, D_VALUES, P_FIXED)
+        results = scan_platform(platform_name, pdict, D_VALUES, P_FIXED,
+                                use_compiler=args.use_compiler)
         all_results[platform_name] = results
 
     # ── Fit Λ for each platform ──────────────────────────────────────────────
@@ -240,7 +279,7 @@ def main():
         )
 
     # ── Save JSON ────────────────────────────────────────────────────────────
-    json_path = RESULTS_DIR / "exp2_pl_vs_d.json"
+    json_path = results_dir / "exp2_pl_vs_d.json"
     serialised = {
         platform_name: {
             "results": [r.to_dict() for r in results],
@@ -255,8 +294,8 @@ def main():
     # ── Plot ─────────────────────────────────────────────────────────────────
     plot_results(
         all_results,
-        out_png=RESULTS_DIR / "exp2_pl_vs_d.png",
-        out_pdf=RESULTS_DIR / "exp2_pl_vs_d.pdf",
+        out_png=results_dir / "exp2_pl_vs_d.png",
+        out_pdf=results_dir / "exp2_pl_vs_d.pdf",
     )
 
     print("\n=== Experiment 2 complete ===")

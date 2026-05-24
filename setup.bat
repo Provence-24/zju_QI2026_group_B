@@ -18,13 +18,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Creating venv with Python 3.11+ (uv will fetch it if missing)...
-uv venv --python 3.11 --prompt "%PROJECT_NAME%"
+echo Creating venv and installing dependencies...
+uv sync
 
-echo Installing project and dependencies...
-uv pip install -e .
-
-echo Done!
-echo To activate:
-echo   PowerShell:  .\.venv\Scripts\Activate.ps1
-echo   cmd:         .venv\Scripts\activate.bat
+echo.
+echo Done! Run experiments with:
+echo   uv run python -m surface_code_study.experiments.exp3_platform_compare --d 3 5 7
+echo   uv run pytest surface_code_study/tests/ -v

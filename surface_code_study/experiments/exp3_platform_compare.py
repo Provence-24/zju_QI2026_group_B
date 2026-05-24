@@ -12,6 +12,7 @@ results/exp3_platform_compare.png
 results/exp3_platform_compare.pdf
 """
 
+import argparse
 import json
 import sys
 import time
@@ -30,6 +31,39 @@ from surface_code_study.simulator import (
     run_adaptive_experiment,
 )
 
+
+def build_circuit(platform_name, platform_params, d, rounds, noise_scale, p, use_compiler):
+    """Build circuit — either via stim built-in or PlatformCompiler."""
+    if use_compiler:
+        from surface_code_study.compilers import get_compiler
+
+        # Scale parameters
+        params = dict(platform_params)
+        if p is not None:
+            p_val = float(p)
+            scales = params.get('relative_scales', {})
+            params['p_gate_2q'] = p_val
+            params['p_gate_1q'] = p_val * scales.get('gate_1q', 0.3)
+            params['p_meas'] = p_val * scales.get('meas', 5.0)
+            params['p_reset'] = p_val * scales.get('reset', 0.1)
+        else:
+            scale = float(noise_scale)
+            params['p_gate_2q'] = scale * float(params['p_gate_2q'])
+            params['p_gate_1q'] = scale * float(params['p_gate_1q'])
+            params['p_meas'] = scale * float(params['p_meas'])
+            params['p_reset'] = scale * float(params['p_reset'])
+
+        compiler = get_compiler(platform_name, distance=d, noise_params=params)
+        return compiler.build_memory_circuit(num_rounds=rounds)
+    else:
+        return build_surface_code_circuit(
+            d=d,
+            platform_params=platform_params,
+            rounds=rounds,
+            noise_scale=noise_scale,
+            p=p,
+        )
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 D_VALUES: list[int] = [3, 5, 7, 9]
@@ -39,7 +73,6 @@ P_FOR_D_TABLE: float = 0.001  # p=0.1% 2Q gate error — used for d_needed table
 MIN_ERRORS: int = 100
 
 RESULTS_DIR = Path(__file__).parent.parent.parent / "results"
-RESULTS_DIR.mkdir(exist_ok=True)
 
 # ── Scan helpers ──────────────────────────────────────────────────────────────
 
@@ -48,15 +81,16 @@ def scan_pl_vs_d(
     platform_params: dict,
     d_values: list[int],
     p_scale: float,
+    use_compiler: bool = False,
 ) -> list[dict]:
     results = []
     for d in d_values:
         rounds = d
         print(f"  d={d} ... ", end="", flush=True)
         t0 = time.perf_counter()
-        circuit = build_surface_code_circuit(
-            d=d, platform_params=platform_params,
-            rounds=rounds, noise_scale=p_scale,
+        circuit = build_circuit(
+            platform_name, platform_params, d=d, rounds=rounds,
+            noise_scale=p_scale, p=None, use_compiler=use_compiler,
         )
         decoder = get_decoder(DEFAULT_DECODER, circuit)
         res = run_adaptive_experiment(
@@ -81,6 +115,7 @@ def estimate_d_for_pl_target(
     p: float,
     pl_target: float,
     d_range: range = range(3, 21, 2),
+    use_compiler: bool = False,
 ) -> tuple[int | None, float]:
     """
     Estimate the minimum d needed to reach PL ≤ pl_target at given p.
@@ -100,9 +135,9 @@ def estimate_d_for_pl_target(
     coarse_ds = list(range(3, 21, 2))  # d = 3, 5, 7, 9, 11, 13, 15, 17, 19
     coarse_results = {}
     for d in coarse_ds:
-        circuit = build_surface_code_circuit(
-            d=d, platform_params=platform_params,
-            rounds=d, p=p,
+        circuit = build_circuit(
+            platform_name, platform_params, d=d, rounds=d,
+            noise_scale=1.0, p=p, use_compiler=use_compiler,
         )
         decoder = get_decoder(DEFAULT_DECODER, circuit)
         res = run_adaptive_experiment(
@@ -230,7 +265,20 @@ def plot_combined(
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    print(f"=== Experiment 3: Platform comparison ===\n")
+    parser = argparse.ArgumentParser(description="Experiment 3: Platform comparison")
+    parser.add_argument("--use_compiler", action="store_true",
+                        help="Use PlatformCompiler instead of stim built-in circuit")
+    parser.add_argument("--d", type=int, nargs="+", default=[3, 5, 7, 9],
+                        help="Code distances to scan")
+    parser.add_argument("--rounds", type=int, default=None,
+                        help="Number of rounds (default: d)")
+    args = parser.parse_args()
+
+    d_values = args.d
+    print(f"=== Experiment 3: Platform comparison (compiler={args.use_compiler}) ===\n")
+
+    results_dir = RESULTS_DIR / ("compiler" if args.use_compiler else "builtin")
+    results_dir.mkdir(parents=True, exist_ok=True)
 
     d_needed = {}
     pl_vs_d = {}
@@ -239,17 +287,21 @@ def main():
         pdict = params._asdict()
         print(f"\n[{platform_name}]")
         print("--- PL vs d scan ---")
-        results = scan_pl_vs_d(platform_name, pdict, D_VALUES, P_NATURAL)
+        results = scan_pl_vs_d(
+            platform_name, pdict, d_values, P_NATURAL,
+            use_compiler=args.use_compiler,
+        )
         pl_vs_d[platform_name] = results
 
         print("--- d for PL=10^-6 (at p=0.1% 2Q gate error) ---")
         d_min, pl_at_d = estimate_d_for_pl_target(
             platform_name, pdict, P_FOR_D_TABLE, PL_TARGET,
+            use_compiler=args.use_compiler,
         )
         d_needed[platform_name] = (d_min, pl_at_d)
 
     # ── Save JSON ────────────────────────────────────────────────────────────
-    json_path = RESULTS_DIR / "exp3_platform_compare.json"
+    json_path = results_dir / "exp3_platform_compare.json"
     serialised = {
         "pl_vs_d": pl_vs_d,
         "d_needed_for_pl_target": {
@@ -264,8 +316,8 @@ def main():
     # ── Plot ─────────────────────────────────────────────────────────────────
     plot_combined(
         pl_vs_d, d_needed,
-        out_png=RESULTS_DIR / "exp3_platform_compare.png",
-        out_pdf=RESULTS_DIR / "exp3_platform_compare.pdf",
+        out_png=results_dir / "exp3_platform_compare.png",
+        out_pdf=results_dir / "exp3_platform_compare.pdf",
     )
 
     print("\n=== Experiment 3 complete ===")

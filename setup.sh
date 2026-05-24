@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 PROJECT_NAME="QI2026_group_B"
 
@@ -15,10 +16,10 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
-echo "Creating venv with Python 3.11+ (uv will fetch it if missing)..."
-uv venv --python 3.11 --prompt "$PROJECT_NAME"
+echo "Creating venv and installing dependencies..."
+uv sync
 
-echo "Installing project and dependencies..."
-uv pip install -e .
-
-echo "Done! To activate, run: source .venv/bin/activate"
+echo ""
+echo "Done! Run experiments with:"
+echo "  uv run python -m surface_code_study.experiments.exp3_platform_compare --d 3 5 7"
+echo "  uv run pytest surface_code_study/tests/ -v"

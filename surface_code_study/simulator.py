@@ -98,10 +98,10 @@ class UnionFindDecoder(Decoder):
         self._build_graph()
 
     def _build_graph(self) -> None:
-        “””
+        """
         构建包含【虚拟边界】的伴随图。
         表面码的边缘错误只会触发一个探测器，这些错误必须被排入边界。
-        “””
+        """
         # 我们增加一个特殊的节点代表”系统边界 (Boundary)”
         self.BOUNDARY = self._num_detectors
         self._num_nodes = self._num_detectors + 1
@@ -111,7 +111,7 @@ class UnionFindDecoder(Decoder):
         self._edge_weight: dict[tuple[int, int], float] = {}
 
         for instruction in self._dem.flattened():
-            if instruction.type == “error”:
+            if instruction.type == "error":
                 targets = instruction.targets_copy()
                 weight = instruction.args[0] if instruction.args else 1.0
                 if len(targets) == 2:

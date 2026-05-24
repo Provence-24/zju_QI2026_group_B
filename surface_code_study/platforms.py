@@ -51,6 +51,11 @@ class PlatformParams(NamedTuple):
         Physical duration of one syndrome-extraction cycle (microseconds).
         Used for context only; does not affect the logical error rate in
         our simplified model.
+    T1_us : float
+        T1 relaxation time (microseconds). Used by PlatformCompiler to
+        compute physically accurate idle decoherence via Pauli channel.
+    T2_us : float
+        T2 dephasing time (microseconds). Clamped to T2 ≤ 2*T1.
     relative_scales : dict[str, float]
         Platform-internal scaling factors relative to a base error rate.
         Keys: "gate_1q", "gate_2q", "meas", "reset", "idle".
@@ -63,6 +68,8 @@ class PlatformParams(NamedTuple):
     p_reset: float
     p_idle: float
     cycle_time_us: float
+    T1_us: float
+    T2_us: float
     relative_scales: dict[str, float]
 
 
@@ -83,6 +90,9 @@ def _build_superconducting() -> PlatformParams:
 
     Note: p_idle here is the *probability* per cycle that a data qubit
     depolarizes, consistent with stim's before_round_data_depolarization.
+
+    T1 ≈ 100 μs, T2 ≈ 100 μs (Willow transmon qubits, Nature 2025).
+    T2 is typically limited by T1 in transmons.
     """
     return PlatformParams(
         p_gate_1q=3e-4,          # 0.03 % — Google's best 1q gate fidelity
@@ -91,6 +101,8 @@ def _build_superconducting() -> PlatformParams:
         p_reset=1e-4,           # 0.01 % — reset fidelity 99.99 %
         p_idle=1e-2,            # 1.0 %  — T2≈100μs, cycle≈1μs → ~1% per cycle
         cycle_time_us=1.0,      # 1 μs per syndrome round
+        T1_us=100.0,            # 100 μs — transmon T1 (Willow, Nature 2025)
+        T2_us=100.0,            # 100 μs — transmon T2 ≈ T1
         relative_scales={
             "gate_1q": 0.3,     # p_gate_1q / p_gate_2q = 0.3
             "gate_2q": 1.0,      # baseline
@@ -115,6 +127,7 @@ def _build_neutral_atom() -> PlatformParams:
     Idle: T2(r) ~ ms range, cycle ~ 1 μs → p_idle ~ 0.1 % per cycle
           (estimate; neutral atoms have excellent coherence).
 
+    Storage zone: T1 ~ 1 s (ground state), T2 ~ 1 ms (magnetic noise limit).
     Note: "estimate,待校准" values are based on typical published ranges
     and the specific experimental conditions in Bluvstein 2024.
     """
@@ -125,6 +138,8 @@ def _build_neutral_atom() -> PlatformParams:
         p_reset=5e-3,           # 0.50 % — estimate,待校准; laser cooling overhead
         p_idle=1e-3,            # 0.10 % — estimate,待校准; T2~1ms, cycle~1μs
         cycle_time_us=1.0,      # 1 μs per syndrome round (typical)
+        T1_us=1e6,              # 1 s — ground-state storage T1
+        T2_us=1e3,              # 1 ms — magnetic noise / light shift limit
         relative_scales={
             "gate_1q": 0.17,     # p_gate_1q / p_gate_2q ≈ 1/6
             "gate_2q": 1.0,      # baseline
@@ -159,6 +174,8 @@ def _build_ion_trap() -> PlatformParams:
         p_reset=1e-3,           # 0.10 % — estimate,待校准; ion replenishment
         p_idle=1e-6,            # negligible — T2 > 1 s, cycle ~10 μs
         cycle_time_us=10.0,     # 10 μs per gate operation (Mølmer-Sørensen)
+        T1_us=1e7,              # >10 s — trapped ion ground state T1
+        T2_us=1e7,              # >10 s — ultra-long coherence in trap
         relative_scales={
             "gate_1q": 0.1,      # p_gate_1q / p_gate_2q = 0.1
             "gate_2q": 1.0,     # baseline

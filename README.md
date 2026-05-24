@@ -17,7 +17,7 @@ p.s. 基本不用看代码<br>
 
 # QI2026 Surface Code Study
 
-比较三种量子硬件平台（超导、中性原子、离子阱）上表面码的逻辑错误率，支持多种解码器（MWPM、Union-Find）。
+比较三种量子硬件平台（超导、中性原子、离子阱）上表面码的逻辑错误率，支持多种解码器（MWPM、Union-Find）和两种电路构建方式（stim 内置电路 / 平台感知编译器）。
 
 ## 平台
 
@@ -29,11 +29,30 @@ p.s. 基本不用看代码<br>
 
 ## 快速开始
 
+**安装**（二选一）：
+
 ```bash
-pip install -e .
-python -m surface_code_study.experiments.exp1_pl_vs_p   # PL vs p
-python -m surface_code_study.experiments.exp2_pl_vs_d   # PL vs d
-python -m surface_code_study.experiments.exp3_platform_compare  # 综合对比
+uv sync            # 方式1：直接安装
+.\setup.bat        # 方式2：Windows 一键脚本（含 uv 安装）
+./setup.sh         #         Linux/Mac 一键脚本
+```
+
+**运行实验**（无需手动激活 venv，`uv run` 自动处理）：
+
+```bash
+# stim 内置电路模式（默认）
+uv run python -m surface_code_study.experiments.exp1_pl_vs_p
+uv run python -m surface_code_study.experiments.exp2_pl_vs_d
+uv run python -m surface_code_study.experiments.exp3_platform_compare
+
+# PlatformCompiler 模式（平台感知物理电路）
+uv run python -m surface_code_study.experiments.exp3_platform_compare --use_compiler --d 3 5 7
+```
+
+**运行测试**：
+
+```bash
+uv run pytest surface_code_study/tests/ -v
 ```
 
 ## 依赖
@@ -44,6 +63,8 @@ python -m surface_code_study.experiments.exp3_platform_compare  # 综合对比
 
 ## 结果
 
-图片和 JSON 保存在 `results/` 目录。
+图片和 JSON 保存在 `results/` 目录，按模式分到 `builtin/` 和 `compiler/` 子目录。
+
+实验数据对比见 [results/RESULTS.md](results/RESULTS.md)。
 
 详细说明见 [surface_code_study/README.md](surface_code_study/README.md)。
