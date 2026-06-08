@@ -6,6 +6,8 @@ syndrome-extraction round with platform-specific physical operations
 (movement, transport, idle decoherence, etc.).
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import math
 import stim
@@ -249,7 +251,13 @@ class PlatformCompiler(ABC):
     # Noise helpers
     # ------------------------------------------------------------------
 
-    def idle_noise(self, qubits: list[int], duration_ns: float) -> stim.Circuit:
+    def idle_noise(
+        self,
+        qubits: list[int],
+        duration_ns: float,
+        T1_us: float | None = None,
+        T2_us: float | None = None,
+    ) -> stim.Circuit:
         """
         Apply idle decoherence noise via PAULI_CHANNEL_1.
 
@@ -265,9 +273,16 @@ class PlatformCompiler(ABC):
             Qubit indices to apply noise to.
         duration_ns : float
             Idle duration in nanoseconds.
+        T1_us : float or None
+            Override T1 in microseconds. If None, use self.params['T1_us'].
+        T2_us : float or None
+            Override T2 in microseconds. If None, use self.params['T2_us'].
         """
-        T1_ns = self.params['T1_us'] * 1000.0
-        T2_ns = self.params['T2_us'] * 1000.0
+        _T1_us = T1_us if T1_us is not None else self.params['T1_us']
+        _T2_us = T2_us if T2_us is not None else self.params['T2_us']
+
+        T1_ns = _T1_us * 1000.0
+        T2_ns = _T2_us * 1000.0
         T2_ns = min(T2_ns, 2.0 * T1_ns)
 
         if duration_ns <= 0 or T1_ns <= 0:
@@ -284,12 +299,16 @@ class PlatformCompiler(ABC):
         return c
 
     def idle_noise_except(
-        self, active_qubits: list[int], duration_ns: float
+        self,
+        active_qubits: list[int],
+        duration_ns: float,
+        T1_us: float | None = None,
+        T2_us: float | None = None,
     ) -> stim.Circuit:
         """Apply idle noise to all data and ancilla qubits except the active set."""
         all_qubits = list(range(len(self._layout['data']) + len(self._layout['ancillas'])))
         idle = [q for q in all_qubits if q not in active_qubits]
-        return self.idle_noise(idle, duration_ns)
+        return self.idle_noise(idle, duration_ns, T1_us, T2_us)
 
     # ------------------------------------------------------------------
     # Utility

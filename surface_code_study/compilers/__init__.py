@@ -20,8 +20,13 @@ PLATFORM_EXTRA_PARAMS: dict[str, dict] = {
     },
     "neutral_atom": {
         "t_move_ns": 200_000.0,    # 200 μs per movement (round-trip, Bluvstein 2024)
+        "t_gate_ns": 100.0,        # ~0.1 μs Rydberg CZ gate pulse
         "t_cycle_ns": 800_000.0,   # 800 μs per round (4 batches × 200 μs movement)
         "n_move_batches": 4,
+        # Rydberg-state coherence (during entangling gate)
+        # Limited by radiative lifetime of Rydberg state (n≈70)
+        "T1_rydberg_us": 100.0,    # ~100 μs Rydberg lifetime
+        "T2_rydberg_us": 100.0,    # ~100 μs Rydberg coherence
     },
     "trapped_ion": {
         "t_transport_ns": 2_000_000.0,  # 2 ms per transport (Quantinuum H2 ≈ shuttling)
@@ -99,5 +104,12 @@ def _map_params(platform_name: str, platform_params: dict) -> dict:
     # Add platform-specific extras
     extras = PLATFORM_EXTRA_PARAMS.get(platform_name, {})
     params.update(extras)
+
+    # Zero-noise override: if base T1 is effectively infinite, propagate to
+    # all zone-specific T1/T2 variants so that tests only need to set T1_us.
+    if params['T1_us'] > 1e9:
+        for key in list(params.keys()):
+            if key.startswith('T1_') or key.startswith('T2_'):
+                params[key] = 1e12
 
     return params
