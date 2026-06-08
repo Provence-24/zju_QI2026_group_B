@@ -294,19 +294,90 @@ class UnionFindDecoder(Decoder):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Decoder factory
+# BP+OSD Decoder (for qLDPC codes with hyperedges)
 # ──────────────────────────────────────────────────────────────────────────────
 
-def get_decoder(name: str, circuit: stim.Circuit) -> Decoder:
+class BPOSDDecoder(Decoder):
     """
-    Factory function to create a decoder by name.
+    Belief Propagation + Ordered Statistics Decoding for qLDPC codes.
+
+    Uses ldpc's BpOsdDecoder wrapped around stim's DetectorErrorModel.
+    Handles hyperedges (error mechanisms involving >2 detectors) which
+    are inherent to qLDPC codes and cannot be decoded by MWPM.
+
+    Parameters
+    ----------
+    circuit : stim.Circuit
+        The stim circuit with noise channels.
+    max_iter : int
+        Maximum BP iterations (default: 0 = auto).
+    osd_order : int
+        OSD order for post-processing (default: 10).
+    bp_method : str
+        BP method: "product_sum" or "minimum_sum".
+    """
+
+    def __init__(
+        self,
+        circuit: stim.Circuit,
+        max_iter: int = 0,
+        osd_order: int = 10,
+        bp_method: str = "minimum_sum",
+    ):
+        from ldpc import BpOsdDecoder
+        from ldpc.ckt_noise import detector_error_model_to_check_matrices
+
+        # Build DEM without decomposition — BP+OSD handles hyperedges natively
+        dem = circuit.detector_error_model(decompose_errors=False)
+        self._matrices = detector_error_model_to_check_matrices(
+            dem, allow_undecomposed_hyperedges=True
+        )
+
+        # Convert prior probabilities to list for error_channel
+        error_channel = list(self._matrices.priors.astype(float))
+
+        self._bposd = BpOsdDecoder(
+            self._matrices.check_matrix,
+            error_channel=error_channel,
+            max_iter=max_iter,
+            bp_method=bp_method,
+            osd_method="OSD_CS",
+            osd_order=osd_order,
+        )
+
+    def decode(self, syndrome: list[int]) -> int:
+        syndrome_arr = np.array(syndrome, dtype=np.uint8)
+        corr = self._bposd.decode(syndrome_arr)
+        # corr is the error pattern (which hyperedges occurred)
+        # Predicted observable = (observables_matrix @ corr) % 2
+        obs_pred = np.asarray(
+            (self._matrices.observables_matrix @ corr) % 2
+        ).flatten()
+        return int(obs_pred[0]) if len(obs_pred) > 0 else 0
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Decoder factory (with auto-selection for qLDPC codes)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def get_decoder(
+    name: str,
+    circuit: stim.Circuit,
+    code_type: str = "surface_code",
+) -> Decoder:
+    """
+    Factory function to create a decoder by name and code type.
 
     Parameters
     ----------
     name : str
-        Decoder name. Supported: "mwpm", "uf" (union-find).
+        Decoder name. Supported: "mwpm", "uf" (union-find), "bposd".
+        When "auto", selects "mwpm" for surface codes and "bposd" for qLDPC.
     circuit : stim.Circuit
         The stim circuit (used to build the decoder).
+    code_type : str
+        "surface_code" or "qldpc". Used when name="auto" to select the
+        appropriate decoder.
 
     Returns
     -------
@@ -318,23 +389,32 @@ def get_decoder(name: str, circuit: stim.Circuit) -> Decoder:
     ValueError
         If the decoder name is not supported.
     """
+    if name == "auto":
+        name = "bposd" if code_type == "qldpc" else "mwpm"
+
     if name == "mwpm":
         return PyMatchingMWPMDecoder(circuit)
     if name in ("uf", "unionfind"):
         return UnionFindDecoder(circuit)
-    raise ValueError(f"Unknown decoder: {name!r}. Supported: 'mwpm', 'uf'")
+    if name == "bposd":
+        return BPOSDDecoder(circuit)
+    raise ValueError(
+        f"Unknown decoder: {name!r}. Supported: 'mwpm', 'uf', 'bposd', 'auto'"
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Decoder configuration
 # ──────────────────────────────────────────────────────────────────────────────
 
-DEFAULT_DECODER: str = "mwpm"
+DEFAULT_DECODER: str = "auto"
 """
 Default decoder name used in experiments.
 
-Supported: "mwpm" (Minimum Weight Perfect Matching),
-          "uf" or "unionfind" (Union-Find).
+Supported: "auto" (selects "mwpm" for surface codes, "bposd" for qLDPC),
+          "mwpm" (Minimum Weight Perfect Matching),
+          "uf" or "unionfind" (Union-Find),
+          "bposd" (BP+OSD for qLDPC codes with hyperedges).
 
 Change this value to switch the decoder across all experiments.
 """

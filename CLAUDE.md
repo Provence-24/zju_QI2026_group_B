@@ -30,6 +30,9 @@ public static class WinFlash {
 }
 "@
 Get-Process | Where-Object { $_.ProcessName -like "Code*" -and $_.MainWindowHandle -ne 0 } | ForEach-Object { [WinFlash]::Flash($_.MainWindowHandle) }
+[Console]::Beep(1200, 120)
+Start-Sleep -Milliseconds 80
+[Console]::Beep(1600, 150)
 '
 ```
 

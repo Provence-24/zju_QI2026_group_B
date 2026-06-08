@@ -9,6 +9,7 @@ from surface_code_study.compilers.base import PlatformCompiler
 from surface_code_study.compilers.superconducting import SuperconductingCompiler
 from surface_code_study.compilers.neutral_atom import NeutralAtomCompiler
 from surface_code_study.compilers.trapped_ion import TrappedIonCompiler
+from surface_code_study.compilers.qldpc_neutral_atom import NeutralAtomQLDPCCompiler
 
 # ---------------------------------------------------------------------------
 # Platform-specific extra parameters (beyond the base noise_params)
@@ -113,3 +114,39 @@ def _map_params(platform_name: str, platform_params: dict) -> dict:
                 params[key] = 1e12
 
     return params
+
+
+# ---------------------------------------------------------------------------
+# qLDPC compiler factory
+# ---------------------------------------------------------------------------
+
+def get_qldpc_compiler(
+    platform_name: str,
+    code,
+    noise_params: dict,
+) -> PlatformCompiler:
+    """
+    Factory: return a qLDPC-aware PlatformCompiler for the given platform.
+
+    Parameters
+    ----------
+    platform_name : str
+        Currently only "neutral_atom" is supported for qLDPC.
+    code : BBCode
+        The BB code instance (with H_X, H_Z matrices).
+    noise_params : dict
+        Base noise parameters (same format as get_compiler).
+
+    Returns
+    -------
+    PlatformCompiler
+        Configured qLDPC compiler.
+    """
+    if platform_name != "neutral_atom":
+        raise NotImplementedError(
+            f"qLDPC compiler for {platform_name!r} is not yet implemented. "
+            f"Only 'neutral_atom' is supported."
+        )
+
+    params = _map_params(platform_name, noise_params)
+    return NeutralAtomQLDPCCompiler(code=code, noise_params=params)
