@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmarking Surface-Code Logical Error Rates Across Quantum Platforms</title>
+  
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            beamerblue: {
+              dark: '#1e3a8a',    
+              primary: '#2563eb', 
+              light: '#eff6ff',   
+              accent: '#3b82f6',  
+            },
+            beamergray: {
+              bg: '#f1f5f9',      
+              foot: '#e2e8f0',    
+              text: '#1e293b',    
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    
+    body {
+      font-family: 'Times New Roman', Times, serif, system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+    }
+    
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      max-width: 100%;
+      scrollbar-width: none; 
+    }
+    .katex-display::-webkit-scrollbar {
+      display: none;
+    }
+    .katex {
+      font-size: 1.15em;
+    }
+    
+    .slide-enter {
+      opacity: 0;
+      transform: scale(0.98) translateY(10px);
+    }
+    .slide-active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .beamer-block {
+      border-top-left-radius: 0.375rem;
+      border-top-right-radius: 0.375rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .atom-node {
+      transition: cx 0.8s cubic-bezier(0.25, 1, 0.5, 1), cy 0.8s cubic-bezier(0.25, 1, 0.5, 1), r 0.3s ease, fill 0.3s ease;
+    }
+    .ion-node {
+      transition: cx 0.8s cubic-bezier(0.25, 1, 0.5, 1), cy 0.8s cubic-bezier(0.25, 1, 0.5, 1), r 0.3s ease, fill 0.3s ease;
+    }
+    .tweezer-beam {
+      transition: opacity 0.5s ease, x 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+  </style>
+</head>
+<body class="bg-gray-950 flex items-center justify-center min-h-screen text-beamergray-text select-none overflow-hidden">
+
+  
+  <div id="presentation-container" class="relative bg-beamergray-bg w-[1120px] h-[630px] flex flex-col justify-between overflow-hidden shadow-2xl rounded-lg transition-transform duration-200">
+    
+    
+    <header class="bg-beamerblue-dark text-white text-xs px-6 py-2.5 flex justify-between items-center z-10">
+      <div class="font-bold flex items-center gap-2">
+        <i data-lucide="cpu" class="w-4 h-4 text-blue-300"></i>
+        <span>SURFACE-CODE LOGICAL BENCHMARK (2026)</span>
+      </div>
+      
+      <nav class="flex gap-4 font-semibold text-white">
+        <span id="nav-sec-1" onclick="showSlide(1)" class="cursor-pointer transition-colors duration-200 opacity-50 hover:opacity-100">1. Motivation & Framework</span>
+        <span id="nav-sec-2" onclick="showSlide(4)" class="cursor-pointer transition-colors duration-200 opacity-50 hover:opacity-100">2. Platform Hardware</span>
+        <span id="nav-sec-3" onclick="showSlide(8)" class="cursor-pointer transition-colors duration-200 opacity-50 hover:opacity-100">3. Numerical Experiments</span>
+        <span id="nav-sec-4" onclick="showSlide(13)" class="cursor-pointer transition-colors duration-200 opacity-50 hover:opacity-100">4. Conclusions</span>
+      </nav>
+    </header>
+
+    
+    <main class="flex-grow p-8 relative flex flex-col justify-center">
+
+      
+      <div id="slide-0" class="slide-active flex flex-col justify-center items-center h-full text-center space-y-5">
+        <div class="space-y-3">
+          <h1 class="text-3xl font-extrabold text-beamerblue-dark tracking-tight leading-snug max-w-4xl">
+            Benchmarking Surface-Code Logical Error Rates Across Superconducting, Neutral-Atom, and Trapped-Ion Platforms
+          </h1>
+          <p class="text-xl text-beamerblue-primary font-medium italic">
+            From Physical Mechanisms and Platform-Aware Compilation to Numerical Results
+          </p>
+        </div>
+        
+        <div class="w-32 h-1 bg-gradient-to-r from-transparent via-beamerblue-primary to-transparent"></div>
+        
+        <div class="space-y-1.5 text-sm text-gray-600">
+          <p class="font-semibold text-lg text-gray-800">ZJU QI 2026 Group B</p>
+          <p class="text-sm">Zhejiang University</p>
+          <p class="text-xs mt-2 text-gray-500 font-mono">Date: June 2026</p>
+        </div>
+
+        <div class="flex gap-4 mt-4">
+          <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+            <i data-lucide="shield-check" class="w-4 h-4 mr-1"></i> Surface Code
+          </span>
+          <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+            <i data-lucide="layers" class="w-4 h-4 mr-1"></i> Multi-Platform Comparison
+          </span>
+        </div>
+      </div>
+
+      
+      <div id="slide-1" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-2 flex items-center gap-2">
+          <i data-lucide="help-circle" class="text-beamerblue-primary"></i> Research Overview: Key Questions & Benchmarking Framework
+        </h2>
+        <div class="grid grid-cols-2 gap-5 my-auto">
+          
+          <div class="beamer-block bg-beamerblue-light border-t-4 border-beamerblue-dark p-4">
+            <h3 class="font-bold text-beamerblue-dark text-base flex items-center gap-1.5">
+              <span class="bg-beamerblue-dark text-white rounded-full w-5.5 h-5.5 flex items-center justify-center text-xs">Q</span>
+              Why perform cross-platform benchmarking?
+            </h3>
+            <p class="text-sm text-gray-700 mt-2 leading-relaxed">
+              A single physical gate fidelity cannot tell whether a platform is suited for QEC. We instead ask one unified question: to realize <strong>one reliable logical qubit</strong>, how many physical qubits, how many syndrome rounds, and what final per-round logical error rate $P_L$ does each platform need?
+            </p>
+          </div>
+          
+          <div class="beamer-block bg-green-50 border-t-4 border-green-600 p-4">
+            <h3 class="font-bold text-green-800 text-base flex items-center gap-1.5">
+              <span class="bg-green-600 text-white rounded-full w-5.5 h-5.5 flex items-center justify-center text-xs">Q</span>
+              Why use the Surface Code as the baseline?
+            </h3>
+            <p class="text-sm text-gray-700 mt-2 leading-relaxed">
+              It requires only <strong>local stabilizer measurements</strong>, making it compatible with most current 2D hardware, and it is the most widely used baseline in fault-tolerant computing — a "common language" for comparing very different platforms.
+            </p>
+          </div>
+          
+          <div class="beamer-block bg-amber-50 border-t-4 border-amber-600 p-4">
+            <h3 class="font-bold text-amber-800 text-base flex items-center gap-1.5">
+              <span class="bg-amber-600 text-white rounded-full w-5.5 h-5.5 flex items-center justify-center text-xs">Q</span>
+              How are comparison metrics determined?
+            </h3>
+            <p class="text-sm text-gray-700 mt-2 leading-relaxed">
+              Not by bare gate noise ($p_{2Q}$) alone. In a full syndrome cycle, measurement, reset, idle waiting, atom shuttling, and ion transport all turn into effective noise <strong>through their time cost</strong>, feeding an effective budget $p_{\mathrm{eff}}$ that also depends on $T_1, T_2$.
+            </p>
+          </div>
+          
+          <div class="beamer-block bg-purple-50 border-t-4 border-purple-600 p-4">
+            <h3 class="font-bold text-purple-800 text-base flex items-center gap-1.5">
+              <span class="bg-purple-600 text-white rounded-full w-5.5 h-5.5 flex items-center justify-center text-xs">Q</span>
+              How will we perform the benchmarks?
+            </h3>
+            <p class="text-sm text-gray-700 mt-2 leading-relaxed">
+              Two circuit models. The <strong>Builtin Model</strong> uses Stim's rotated surface-code memory with aggregate noise, ideal for threshold-theorem baselines. The <strong>Platform-Aware Compiler</strong> builds gate-by-gate sequences and derives idle noise from $T_1/T_2$ and real schedule times.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-2" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="grid" class="text-beamerblue-primary"></i> Introduction to Surface Code & Syndrome Extraction</span>
+          <span class="text-xs text-beamerblue-primary bg-blue-100 px-2 py-1 rounded">Interactive Grid Demonstration</span>
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-6 items-center my-auto">
+          
+          <div class="col-span-5 space-y-2.5">
+            <div class="beamer-block bg-beamerblue-light p-3 border-l-4 border-beamerblue-dark text-sm">
+              <p class="font-bold text-beamerblue-dark mb-1">Rotated Surface Code (Distance $d=3$)</p>
+              <p class="leading-relaxed text-xs">
+                $d^2$ data qubits encode one logical qubit; $d^2-1$ measurement ancillas read out local checks, giving $N_{\mathrm{phys}}=2d^2-1$ ($17$ for $d=3$). Bulk checks touch four data qubits; boundary checks touch two.
+              </p>
+              <div class="text-center text-xs my-1.5">$S_X=\prod_{i\in\partial f} X_i,\quad S_Z=\prod_{i\in\partial f} Z_i$</div>
+              <ul class="list-disc pl-5 mt-1 space-y-0.5 text-xs">
+                <li><span class="text-red-600 font-bold">X-Stabilizers</span> (orange) detect physical <strong>Z errors</strong>.</li>
+                <li><span class="text-blue-600 font-bold">Z-Stabilizers</span> (cyan) detect physical <strong>X errors</strong>.</li>
+              </ul>
+            </div>
+
+            <div class="bg-white rounded p-3 shadow-inner text-xs border-l-4 border-amber-500">
+              <p class="font-semibold text-gray-800 mb-1">Per-round logical error rate</p>
+              <p class="text-gray-600 leading-relaxed mb-1.5">From an $R$-round run with failure $P_{\mathrm{run}}$, invert the binary-flip model $P_{\mathrm{run}}=\tfrac{1}{2}[1-(1-2P_L)^R]$:</p>
+              <div class="text-center text-[11px]">$P_L=\dfrac{1-(1-2P_{\mathrm{run}})^{1/R}}{2},\quad P_L\approx \Lambda\, p^{(d+1)/2}$</div>
+            </div>
+
+            <div class="bg-white rounded p-2.5 shadow-inner text-xs">
+              <p class="text-gray-600 leading-relaxed"><span class="font-semibold text-gray-800">Try it:</span> click a data qubit to toggle a
+                <span class="inline-block px-1 bg-red-100 text-red-800 rounded font-mono font-bold">Z</span> /
+                <span class="inline-block px-1 bg-blue-100 text-blue-800 rounded font-mono font-bold">X</span> error and watch stabilizers fire. Decoder: <strong>MWPM</strong> (surface) / <strong>BP+OSD</strong> (qLDPC).
+              </p>
+              <button onclick="resetSurfaceCodeGrid()" class="mt-2 w-full bg-beamerblue-dark text-white font-bold py-1.5 px-3 rounded hover:bg-beamerblue-primary transition text-xs flex items-center justify-center gap-1.5">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Clear All Errors
+              </button>
+            </div>
+          </div>
+
+          
+          <div class="col-span-7 flex justify-center items-center">
+            <div class="relative bg-white border border-gray-300 rounded-lg p-4 shadow-md w-[460px] h-[340px] flex items-center justify-center">
+              
+              <svg id="surface-code-svg" class="w-full h-full" viewBox="0 0 300 240">
+                
+                <polygon points="50,40 150,40 150,120 50,120" fill="#fee2e2" stroke="#ef4444" stroke-dasharray="3" opacity="0.4"/>
+                <polygon points="150,40 250,40 250,120 150,120" fill="#e0f2fe" stroke="#3b82f6" stroke-dasharray="3" opacity="0.4"/>
+                <polygon points="50,120 150,120 150,200 50,200" fill="#e0f2fe" stroke="#3b82f6" stroke-dasharray="3" opacity="0.4"/>
+                <polygon points="150,120 250,120 250,200 150,200" fill="#fee2e2" stroke="#ef4444" stroke-dasharray="3" opacity="0.4"/>
+
+                
+                
+                <g id="stab-X1" class="transition-all duration-300">
+                  <polygon points="100,72 108,80 100,88 92,80" fill="#f97316" class="cursor-pointer"/>
+                  <text x="100" y="83" font-size="7" fill="white" font-weight="bold" text-anchor="middle">X1</text>
+                </g>
+                <g id="stab-X2" class="transition-all duration-300">
+                  <polygon points="200,152 208,160 200,168 192,160" fill="#f97316" class="cursor-pointer"/>
+                  <text x="200" y="163" font-size="7" fill="white" font-weight="bold" text-anchor="middle">X2</text>
+                </g>
+                <g id="stab-X3" class="transition-all duration-300">
+                  <polygon points="250,72 258,80 250,88 242,80" fill="#f97316" class="cursor-pointer"/>
+                  <text x="250" y="83" font-size="7" fill="white" font-weight="bold" text-anchor="middle">X3</text>
+                </g>
+                <g id="stab-X4" class="transition-all duration-300">
+                  <polygon points="50,152 58,160 50,168 42,160" fill="#f97316" class="cursor-pointer"/>
+                  <text x="50" y="163" font-size="7" fill="white" font-weight="bold" text-anchor="middle">X4</text>
+                </g>
+
+                
+                <g id="stab-Z1" class="transition-all duration-300">
+                  <rect x="194" y="74" width="12" height="12" rx="1" fill="#06b6d4" class="cursor-pointer"/>
+                  <text x="200" y="83" font-size="7" fill="white" font-weight="bold" text-anchor="middle">Z1</text>
+                </g>
+                <g id="stab-Z2" class="transition-all duration-300">
+                  <rect x="94" y="154" width="12" height="12" rx="1" fill="#06b6d4" class="cursor-pointer"/>
+                  <text x="100" y="163" font-size="7" fill="white" font-weight="bold" text-anchor="middle">Z2</text>
+                </g>
+                <g id="stab-Z3" class="transition-all duration-300">
+                  <rect x="44" y="74" width="12" height="12" rx="1" fill="#06b6d4" class="cursor-pointer"/>
+                  <text x="50" y="83" font-size="7" fill="white" font-weight="bold" text-anchor="middle">Z3</text>
+                </g>
+                <g id="stab-Z4" class="transition-all duration-300">
+                  <rect x="244" y="154" width="12" height="12" rx="1" fill="#06b6d4" class="cursor-pointer"/>
+                  <text x="250" y="163" font-size="7" fill="white" font-weight="bold" text-anchor="middle">Z4</text>
+                </g>
+
+                
+                
+                <g id="qubit-D1" onclick="toggleQubitError(1)" class="cursor-pointer group">
+                  <circle cx="50" cy="40" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="50" y="43" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D1</text>
+                </g>
+                <g id="qubit-D2" onclick="toggleQubitError(2)" class="cursor-pointer group">
+                  <circle cx="150" cy="40" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="150" y="43" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D2</text>
+                </g>
+                <g id="qubit-D3" onclick="toggleQubitError(3)" class="cursor-pointer group">
+                  <circle cx="250" cy="40" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="250" y="43" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D3</text>
+                </g>
+                
+                <g id="qubit-D4" onclick="toggleQubitError(4)" class="cursor-pointer group">
+                  <circle cx="50" cy="120" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="50" y="123" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D4</text>
+                </g>
+                <g id="qubit-D5" onclick="toggleQubitError(5)" class="cursor-pointer group">
+                  <circle cx="150" cy="120" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="150" y="123" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D5</text>
+                </g>
+                <g id="qubit-D6" onclick="toggleQubitError(6)" class="cursor-pointer group">
+                  <circle cx="250" cy="120" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="250" y="123" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D6</text>
+                </g>
+                
+                <g id="qubit-D7" onclick="toggleQubitError(7)" class="cursor-pointer group">
+                  <circle cx="50" cy="200" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="50" y="203" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D7</text>
+                </g>
+                <g id="qubit-D8" onclick="toggleQubitError(8)" class="cursor-pointer group">
+                  <circle cx="150" cy="200" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="150" y="203" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D8</text>
+                </g>
+                <g id="qubit-D9" onclick="toggleQubitError(9)" class="cursor-pointer group">
+                  <circle cx="250" cy="200" r="11" fill="#1e3a8a" class="transition-all group-hover:r-13"/>
+                  <text x="250" y="203" font-size="8" fill="white" font-weight="bold" text-anchor="middle">D9</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-3" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="activity" class="text-beamerblue-primary"></i> QEC Cycle & Abstract Noise Modeling</span>
+          <span class="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded">Interactive Parameter Pipeline</span>
+        </h2>
+        
+        
+        <div class="grid grid-cols-4 gap-4 my-2">
+          <div onclick="selectPipelineStep(1)" id="pipeline-step-1" class="cursor-pointer p-3 rounded-lg border-2 border-beamerblue-dark bg-beamerblue-light transition-all shadow-sm">
+            <div class="text-sm font-bold text-beamerblue-dark">Step 1: State Prep (SPAM)</div>
+            <div class="text-[11px] text-gray-500 mt-1">Initial state preparation for all data and measurement ancillas.</div>
+          </div>
+          <div onclick="selectPipelineStep(2)" id="pipeline-step-2" class="cursor-pointer p-3 rounded-lg border border-gray-300 bg-white transition-all shadow-sm">
+            <div class="text-sm font-bold text-gray-800">Step 2: Gate Scheduling</div>
+            <div class="text-[11px] text-gray-500 mt-1">4 directional entangling gates executed in sequence.</div>
+          </div>
+          <div onclick="selectPipelineStep(3)" id="pipeline-step-3" class="cursor-pointer p-3 rounded-lg border border-gray-300 bg-white transition-all shadow-sm">
+            <div class="text-sm font-bold text-gray-800">Step 3: Readout</div>
+            <div class="text-[11px] text-gray-500 mt-1">Dispersive or fluorescence detection of ancillas.</div>
+          </div>
+          <div onclick="selectPipelineStep(4)" id="pipeline-step-4" class="cursor-pointer p-3 rounded-lg border border-gray-300 bg-white transition-all shadow-sm">
+            <div class="text-sm font-bold text-gray-800">Step 4: Idle & Decay</div>
+            <div class="text-[11px] text-gray-500 mt-1">Background relaxation during idle waiting phases.</div>
+          </div>
+        </div>
+
+        
+        <div class="grid grid-cols-12 gap-5 items-center bg-white p-4.5 rounded-lg shadow-inner border border-gray-200">
+          <div class="col-span-4 border-r pr-4 space-y-2">
+            <div class="text-base font-bold text-beamerblue-dark flex items-center gap-1.5">
+              <i data-lucide="sliders" class="w-4 h-4"></i> Active Parameter Target
+            </div>
+            <div id="pipeline-param-details" class="text-sm space-y-1.5 text-gray-700">
+              
+            </div>
+          </div>
+          
+          <div class="col-span-8 space-y-3.5 pl-2">
+            
+            <div class="text-sm font-mono bg-slate-50 p-3 rounded border flex flex-col justify-center items-center h-20 text-center shadow-sm">
+              <span id="pipeline-formula-box" class="block font-semibold"></span>
+            </div>
+            <div id="pipeline-math-explanation" class="text-xs text-gray-600 leading-relaxed">
+              
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-4" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1 flex items-center gap-2">
+          <i data-lucide="zap" class="text-blue-500"></i> Superconducting Transmon Platform & Weak Anharmonicity
+        </h2>
+        
+        
+        <div class="grid grid-cols-4 gap-4 items-center my-2 text-center">
+          <div class="bg-white p-2.5 rounded border-2 border-blue-200 shadow-sm relative group hover:border-blue-500 transition">
+            <span class="text-xs uppercase font-bold text-blue-600">Stage 1</span>
+            <div class="text-sm font-bold text-gray-800 my-0.5">LC Circuit</div>
+            <div class="h-9 flex items-center justify-center">
+              <svg class="w-12 h-9" viewBox="0 0 50 40">
+                <rect x="5" y="10" width="10" height="20" fill="none" stroke="#2563eb" stroke-width="2"/>
+                <line x1="15" y1="20" x2="35" y2="20" stroke="#2563eb" stroke-width="2"/>
+                <line x1="35" y1="10" x2="35" y2="30" stroke="#2563eb" stroke-width="2"/>
+                <line x1="40" y1="10" x2="40" y2="30" stroke="#2563eb" stroke-width="2"/>
+              </svg>
+            </div>
+            <p class="text-[9px] text-gray-500 leading-tight">Harmonic spectrum, degenerate transition energies: $\omega_{01} = \omega_{12}$.</p>
+          </div>
+          
+          <div class="bg-white p-2.5 rounded border-2 border-blue-200 shadow-sm relative group hover:border-blue-500 transition">
+            <span class="text-xs uppercase font-bold text-blue-600">Stage 2</span>
+            <div class="text-sm font-bold text-gray-800 my-0.5">Josephson Junction</div>
+            <div class="h-9 flex items-center justify-center">
+              <svg class="w-12 h-9" viewBox="0 0 50 40">
+                <line x1="10" y1="20" x2="40" y2="20" stroke="#2563eb" stroke-width="2"/>
+                <line x1="20" y1="15" x2="30" y2="25" stroke="#ef4444" stroke-width="2"/>
+                <line x1="20" y1="25" x2="30" y2="15" stroke="#ef4444" stroke-width="2"/>
+              </svg>
+            </div>
+            <p class="text-[9px] text-gray-500 leading-tight">Introduces non-linearity acting as a non-linear inductor: $L_J(\phi)$.</p>
+          </div>
+
+          <div class="bg-white p-2.5 rounded border-2 border-blue-200 shadow-sm relative group hover:border-blue-500 transition">
+            <span class="text-xs uppercase font-bold text-blue-600">Stage 3</span>
+            <div class="text-sm font-bold text-gray-800 my-0.5">Transmon Qubit</div>
+            <div class="h-9 flex items-center justify-center">
+              <span class="text-[10px] font-mono text-blue-600">$H \approx 4 E_C n^2 - E_J \cos \phi$</span>
+            </div>
+            <p class="text-[9px] text-gray-500 leading-tight">Anharmonicity ratio $\alpha \approx -E_C$ isolates computational space $|0\rangle, |1\rangle$.</p>
+          </div>
+
+          <div class="bg-white p-2.5 rounded border-2 border-blue-200 shadow-sm relative group hover:border-blue-500 transition">
+            <span class="text-xs uppercase font-bold text-blue-600">Stage 4</span>
+            <div class="text-sm font-bold text-gray-800 my-0.5">Logical Qubit Grid</div>
+            <div class="h-9 flex items-center justify-center">
+              <div class="grid grid-cols-3 gap-1 bg-blue-50 p-1 rounded">
+                <div class="w-2 h-2 rounded-full bg-blue-600 animate-ping"></div>
+                <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+              </div>
+            </div>
+            <p class="text-[9px] text-gray-500 leading-tight">2D physical qubit grids coupled via CPW or tunable resonators.</p>
+          </div>
+        </div>
+
+        
+        <div class="grid grid-cols-2 gap-5">
+          <div class="beamer-block bg-green-50 border-t-4 border-green-600 p-3 text-sm">
+            <h4 class="font-bold text-green-800 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4"></i> Platform Strengths</h4>
+            <ul class="list-disc pl-5 mt-1 space-y-0.5 text-gray-700 text-xs">
+              <li><strong>Low, Fast Gates:</strong> $p_{1Q}=3\times10^{-4}$, $p_{2Q}=10^{-3}$ via mature nanosecond microwave control.</li>
+              <li><strong>Native 2D Layout:</strong> Planar transmon arrays naturally match the surface-code nearest-neighbor grid.</li>
+            </ul>
+          </div>
+          <div class="beamer-block bg-red-50 border-t-4 border-red-600 p-3 text-sm">
+            <h4 class="font-bold text-red-800 flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Platform Weaknesses & Bottlenecks</h4>
+            <ul class="list-disc pl-5 mt-1 space-y-0.5 text-gray-700 text-xs">
+              <li><strong>Short Coherence:</strong> $T_1=T_2\approx 100\,\mu\text{s}$ — any wait or readout quickly turns into dephasing.</li>
+              <li><strong>Readout &amp; Idle:</strong> $p_{\mathrm{meas}}=5\times10^{-3}$; each round splits into 4 directional CZ layers, exposing idle qubits and the measurement phase to decay.</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="text-center text-[11px] font-mono text-gray-600 border-t pt-2 mt-1">
+          Transmon: $H/\hbar \approx \omega a^{\dagger}a - \frac{\alpha}{2}a^{\dagger}a^{\dagger}aa \qquad$ Working point: $p_{1Q}=3\!\times\!10^{-4},\; p_{2Q}=10^{-3},\; p_{\mathrm{meas}}=5\!\times\!10^{-3},\; T_1=T_2=100\,\mu\text{s}$
+        </div>
+      </div>
+
+      
+      <div id="slide-5" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="orbit" class="text-amber-500"></i> Neutral-Atom Reconfigurable Tweezer Platform & Rydberg Interaction</span>
+          <div class="flex gap-2">
+            <button onclick="triggerAtomReconfigure()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-1 px-2.5 text-xs rounded transition flex items-center gap-1">
+              <i data-lucide="git-branch" class="w-3.5 h-3.5"></i> Reconfigure Array
+            </button>
+            <button id="btn-run-atom" onclick="runAtomRydbergGate()" class="bg-amber-600 text-white font-bold py-1 px-3 text-xs rounded hover:bg-amber-500 flex items-center gap-1 transition">
+              <i data-lucide="play" class="w-3.5 h-3.5"></i> Simulate Rydberg CZ Gate
+            </button>
+          </div>
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-5 items-center my-1">
+          
+          <div class="col-span-6 relative flex flex-col items-center">
+            <div class="bg-slate-950 rounded-lg p-2 border border-slate-700 w-full h-[200px] relative shadow-inner">
+              <svg id="neutral-atom-svg" class="w-full h-full" viewBox="0 0 460 200">
+                
+                <rect x="15" y="15" width="220" height="170" rx="6" fill="rgba(30, 41, 59, 0.2)" stroke="rgba(148, 163, 184, 0.2)" stroke-dasharray="3 3"/>
+                <text x="125" y="30" fill="#94a3b8" font-size="9" font-weight="bold" text-anchor="middle">STORAGE & MEMORY CODES</text>
+
+                
+                <circle cx="350" cy="100" r="45" fill="rgba(245, 158, 11, 0.08)" stroke="rgba(245, 158, 11, 0.3)" stroke-dasharray="4 4"/>
+                <text x="350" y="45" fill="#f59e0b" font-size="9" font-weight="bold" text-anchor="middle">ENTANGLING ZONE</text>
+
+                
+                <g id="tweezer-beams" class="opacity-0 transition-opacity duration-300">
+                  <rect id="tweezer-1" x="115" y="0" width="10" height="200" fill="url(#tweezer-gradient)" opacity="0.45"/>
+                  <rect id="tweezer-2" x="175" y="0" width="10" height="200" fill="url(#tweezer-gradient)" opacity="0.45"/>
+                </g>
+
+                
+                <defs>
+                  <linearGradient id="tweezer-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#38bdf8" stop-opacity="1"/>
+                    <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                  </linearGradient>
+                  <radialGradient id="blockade-radial" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35"/>
+                    <stop offset="75%" stop-color="#ef4444" stop-opacity="0.1"/>
+                    <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+
+                
+                <circle id="rydberg-blockade-sphere" cx="350" cy="100" r="0" fill="url(#blockade-radial)" stroke="#ef4444" stroke-dasharray="2 2" stroke-width="1.5" opacity="0"/>
+                <text id="rydberg-text" x="350" y="103" fill="#fca5a5" font-size="8" font-weight="bold" text-anchor="middle" opacity="0">Rydberg blockade radius</text>
+
+                
+                <circle id="atom-node-1" class="atom-node" cx="60" cy="65" r="5" fill="#38bdf8"/>
+                <circle id="atom-node-2" class="atom-node" cx="120" cy="65" r="5" fill="#38bdf8"/>
+                <circle id="atom-node-3" class="atom-node" cx="180" cy="65" r="5" fill="#38bdf8"/>
+
+                <circle id="atom-node-4" class="atom-node" cx="60" cy="110" r="5" fill="#38bdf8"/>
+                <circle id="atom-node-5" class="atom-node" cx="120" cy="110" r="5" fill="#38bdf8"/>
+                <circle id="atom-node-6" class="atom-node" cx="180" cy="110" r="5" fill="#38bdf8"/>
+
+                <circle id="atom-node-7" class="atom-node" cx="60" cy="155" r="5" fill="#38bdf8"/>
+                <circle id="atom-node-8" class="atom-node" cx="120" cy="155" r="5" fill="#38bdf8"/>
+                <circle id="atom-node-9" class="atom-node" cx="180" cy="155" r="5" fill="#38bdf8"/>
+              </svg>
+
+              
+              <div id="atom-status-panel" class="absolute bottom-2 left-2 bg-slate-900/90 border border-slate-700 px-2 py-0.5 rounded text-[8px] font-mono text-amber-400">
+                Array: SQUARE | Status: READY TO RUN
+              </div>
+            </div>
+            <p class="text-[10px] text-gray-500 mt-1">Interactive vector model mapping physical 2D shuttling transport step-by-step.</p>
+          </div>
+
+          
+          <div class="col-span-6 space-y-3">
+            <div class="beamer-block bg-beamerblue-light p-3 border-l-4 border-amber-500 text-sm">
+              <p class="font-bold text-beamerblue-dark mb-0.5">Rydberg Blockade Hamiltonian and Gate Condition</p>
+              <div class="text-gray-700 leading-relaxed text-xs">
+                $$H = \sum_i \frac{\hbar \Omega_i}{2} \sigma_i^x - \sum_i \hbar \Delta_i n_i + \sum_{i \lt j} \frac{C_6}{R_{ij}^6} n_i n_j$$
+                If $V_{ij}=C_6/R_{ij}^6\gg \Omega$, the doubly excited state $|rr\rangle$ is shifted out of resonance. This blockade gives an entangling phase, but the benchmark shows that shuttling-induced storage dephasing dominates over the nanosecond-scale gate itself.
+              </div>
+            </div>
+            
+            <div class="bg-amber-50 rounded p-2.5 border border-amber-200 text-sm">
+              <p class="font-semibold text-amber-800">Shuttling Time Budget ($B=4$ batches):</p>
+              <p class="font-mono text-amber-900 mt-0.5 text-[10px]">
+                $t_{\mathrm{round}} \approx 2B\,t_{\mathrm{move}} + B\,t_{\mathrm{gate}} = 8(200\mu\text{s}) + 4t_{\mathrm{gate}} \approx 1.6\,\mathrm{ms}$
+              </p>
+              <p class="text-gray-600 mt-0.5 text-[9px]">
+                Since $t_{\mathrm{move}}\!\approx\!200\mu\text{s} \gg t_{\mathrm{gate}}\!\approx\!100\text{ns}$, move-idle alone ($1.6\,$ms) <strong>rivals $T_2=1\,$ms</strong>. The real bottleneck is storage-zone dephasing during shuttling, not the Rydberg gate. Working point: $p_{1Q}\!=\!10^{-3},\,p_{2Q}\!=\!6\!\times\!10^{-3},\,p_{\mathrm{meas}}\!=\!5\!\times\!10^{-3}$.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="grid grid-cols-2 gap-5">
+          <div class="beamer-block bg-green-50 border-t-4 border-green-600 p-2.5 text-sm">
+            <h4 class="font-bold text-green-800 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4"></i> Platform Strengths</h4>
+            <ul class="list-disc pl-5 mt-1 space-y-0.5 text-gray-700 text-xs">
+              <li><strong>Long Coherence:</strong> $T_1 \sim 1\text{s}$, $T_2 \sim 1\text{ms}$ in quiescent storage zones.</li>
+              <li><strong>Geometric Flexibility:</strong> Reconfigurable atom positions support scalable qLDPC networks.</li>
+            </ul>
+          </div>
+          <div class="beamer-block bg-red-50 border-t-4 border-red-600 p-2.5 text-sm">
+            <h4 class="font-bold text-red-800 flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Platform Bottlenecks</h4>
+            <ul class="list-disc pl-5 mt-1 space-y-0.5 text-gray-700 text-xs">
+              <li><strong>Movement-Induced Idle:</strong> Continuous shuttling causes high cumulative idle dephasing.</li>
+              <li><strong>Leakage & Loss:</strong> Spontaneous Rydberg state decay leads to atom escape and loss.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-6" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="cpu" class="text-purple-500"></i> Trapped-Ion QCCD Platform & Collective-Motion Bus</span>
+          <div class="flex gap-1.5">
+            <button id="btn-ion-shuttle" onclick="triggerIonShuttle()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-1 px-2.5 text-xs rounded transition flex items-center gap-1">
+              Shuttle Qubits
+            </button>
+            <button id="btn-ion-gate" onclick="triggerIonMSGate()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-2.5 text-xs rounded transition flex items-center gap-1">
+              Phonon MS Gate
+            </button>
+            <button id="btn-ion-readout" onclick="triggerIonReadout()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2.5 text-xs rounded transition flex items-center gap-1">
+              Fluorescence Readout
+            </button>
+          </div>
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-5 items-center my-1">
+          
+          <div class="col-span-6 relative flex flex-col items-center">
+            <div class="bg-slate-950 rounded-lg p-2 border border-slate-700 w-full h-[200px] relative shadow-inner overflow-hidden">
+              <svg id="trapped-ion-svg" class="w-full h-full" viewBox="0 0 460 200">
+                
+                <path d="M 20 80 L 440 80 M 20 140 L 440 140 M 200 80 L 200 20 M 260 80 L 260 20" stroke="#b45309" stroke-width="2.5" fill="none"/>
+                
+                
+                <g fill="#f59e0b" opacity="0.4">
+                  
+                  <rect x="30" y="73" width="12" height="4" rx="1"/> <rect x="30" y="143" width="12" height="4" rx="1"/>
+                  <rect x="90" y="73" width="12" height="4" rx="1"/> <rect x="90" y="143" width="12" height="4" rx="1"/>
+                  <rect x="150" y="73" width="12" height="4" rx="1"/> <rect x="150" y="143" width="12" height="4" rx="1"/>
+                  <rect x="210" y="73" width="12" height="4" rx="1"/> <rect x="210" y="143" width="12" height="4" rx="1"/>
+                  <rect x="270" y="73" width="12" height="4" rx="1"/> <rect x="270" y="143" width="12" height="4" rx="1"/>
+                  <rect x="330" y="73" width="12" height="4" rx="1"/> <rect x="330" y="143" width="12" height="4" rx="1"/>
+                  <rect x="390" y="73" width="12" height="4" rx="1"/> <rect x="390" y="143" width="12" height="4" rx="1"/>
+                  
+                  <rect x="193" y="30" width="4" height="12" rx="1"/> <rect x="263" y="30" width="4" height="12" rx="1"/>
+                </g>
+
+                
+                <text x="75" y="165" fill="#94a3b8" font-size="8" font-weight="bold" text-anchor="middle">STORAGE TRAP A</text>
+                <text x="375" y="165" fill="#94a3b8" font-size="8" font-weight="bold" text-anchor="middle">STORAGE TRAP B</text>
+                <text x="230" y="165" fill="#a855f7" font-size="9" font-weight="bold" text-anchor="middle">PROCESSING WELL</text>
+                <text x="230" y="25" fill="#3b82f6" font-size="8" font-weight="bold" text-anchor="middle">READOUT ZONE</text>
+
+                
+                <polygon id="readout-laser" points="230,20 215,80 245,80" fill="url(#laser-gradient)" opacity="0" class="transition-opacity duration-300"/>
+                <g id="fluorescence-glow" opacity="0">
+                  <circle cx="230" cy="50" r="15" fill="rgba(56, 189, 248, 0.25)" class="animate-ping"/>
+                </g>
+
+                
+                <defs>
+                  <linearGradient id="laser-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.8"/>
+                    <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+
+                
+                <path id="phonon-bus-spring" d="M 215,110 Q 220,103 225,110 T 235,110 T 245,110" stroke="#10b981" stroke-width="2" fill="none" opacity="0"/>
+
+                
+                
+                <g id="ion-group-1">
+                  <circle id="ion-node-1" class="ion-node" cx="75" cy="110" r="5" fill="#c084fc" stroke="#fdf4ff" stroke-width="1"/>
+                  <circle cx="75" cy="110" r="8" stroke="#a855f7" stroke-width="1" fill="none" opacity="0.3" class="animate-pulse"/>
+                </g>
+                
+                <g id="ion-group-2">
+                  <circle id="ion-node-2" class="ion-node" cx="375" cy="110" r="5" fill="#c084fc" stroke="#fdf4ff" stroke-width="1"/>
+                  <circle cx="375" cy="110" r="8" stroke="#a855f7" stroke-width="1" fill="none" opacity="0.3" class="animate-pulse"/>
+                </g>
+              </svg>
+
+              
+              <div id="ion-status-panel" class="absolute bottom-2 left-2 bg-slate-900/90 border border-slate-700 px-2 py-0.5 rounded text-[8px] font-mono text-purple-400">
+                Electrodes: ALIGNED | Status: VACUUM TRAP SECURE
+              </div>
+            </div>
+            <p class="text-[10px] text-gray-500 mt-1">Interactive QCCD schematic mapping ion shuttling, collective-motion gates, and state-dependent fluorescence readout.</p>
+          </div>
+
+          
+          <div class="col-span-6 space-y-3">
+            <div class="beamer-block bg-beamerblue-light p-3 border-l-4 border-purple-500 text-sm">
+              <p class="font-bold text-beamerblue-dark mb-0.5">Mølmer–Sørensen Collective-Motion Interaction</p>
+              <div class="text-gray-700 leading-relaxed text-xs">
+                $$H_{\mathrm{MS}}(t)=\hbar \eta\Omega\left(ae^{-i\delta t}+a^\dagger e^{i\delta t}\right)S_\phi$$
+                $$U(\tau)=\exp[-i\chi S_\phi^2],\qquad S_\phi=\sum_i \sigma_i^\phi$$
+                The laser force closes a trajectory in motional phase space at gate time $\tau$, leaving only a spin--spin phase. The benchmark therefore separates high intrinsic MS-gate fidelity from the extra QCCD transport and readout latency needed by a surface-code schedule.
+              </div>
+            </div>
+            
+            <div class="bg-purple-50 rounded p-2.5 border border-purple-200 text-sm">
+              <p class="font-semibold text-purple-800">QCCD Transport &amp; Readout Overhead:</p>
+              <p class="font-mono text-purple-900 mt-0.5 text-[10px]">
+                $p_{\mathrm{idle}} \approx \tfrac{1}{2}\big(1-e^{-t_{\mathrm{cycle}}/T_2}\big)$
+              </p>
+              <p class="text-gray-600 mt-0.5 text-[9px]">
+                Even with $T_1,T_2\!>\!10\,$s, every ancilla-data pair needs transport&ndash;gate&ndash;transport plus slow readout. The long cycle and measurement crosstalk still leave a $\sim\!10^{-3}$ idle floor. Working point: $p_{1Q}\!=\!10^{-4},\,p_{2Q}\!=\!10^{-3},\,p_{\mathrm{meas}}\!=\!6\!\times\!10^{-3}$.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="grid grid-cols-2 gap-5">
+          <div class="beamer-block bg-green-50 border-t-4 border-green-600 p-2.5 text-sm">
+            <h4 class="font-bold text-green-800 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4"></i> Platform Strengths</h4>
+            <ul class="list-disc pl-5 mt-1 space-y-0.5 text-gray-700 text-xs">
+              <li><strong>Unmatched Gate Fidelity:</strong> $p_{1Q} \le 10^{-4}$, $p_{2Q} \le 10^{-3}$, leading current physical benchmarks.</li>
+              <li><strong>Ultra-Long Coherence:</strong> $T_1, T_2 \ge 10\text{s}$, highly robust against basic memory loss.</li>
+            </ul>
+          </div>
+          <div class="beamer-block bg-red-50 border-t-4 border-red-600 p-2.5 text-sm">
+            <h4 class="font-bold text-red-800 flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Platform Bottlenecks</h4>
+            <ul class="list-disc pl-5 mt-1 space-y-0.5 text-gray-700 text-xs">
+              <li><strong>Slow Cycle Dynamics:</strong> Shuttling physical structures scales poorly; readout crosstalk is severe.</li>
+              <li><strong>Transport Heating:</strong> Repeated transport excites stray vibrational phonons, requiring laser cooling.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-7" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center gap-2">
+          <i data-lucide="terminal" class="text-beamerblue-primary"></i> Dual-Track Simulation & Experimental Design
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-6 items-center my-auto">
+          
+          <div class="col-span-6 space-y-4">
+            <div class="font-bold text-base text-beamerblue-dark flex items-center gap-1.5">
+              <i data-lucide="git-branch" class="w-5 h-5 text-beamerblue-primary"></i> Compiler vs. Builtin Abstraction
+            </div>
+            
+            <div class="space-y-3 relative border-l-2 border-dashed border-beamerblue-primary pl-4 ml-2 text-sm">
+              
+              <div class="bg-white p-3 rounded shadow-sm border border-gray-200">
+                <span class="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold text-[10px] mb-1">Builtin Path</span>
+                <p class="text-xs text-gray-600 leading-relaxed">
+                  Calls Stim's <code>generated("surface_code:rotated_memory_z")</code>, then injects four aggregate channels: Clifford depolarization, per-round data idle, pre-measurement bit-flip, and post-reset bit-flip. Ideal for threshold behavior; carries no platform timing.
+                </p>
+              </div>
+              
+              <div class="bg-white p-3 rounded shadow-sm border border-gray-200">
+                <span class="inline-block px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-bold text-[10px] mb-1">Compiler Path</span>
+                <p class="text-xs text-gray-600 leading-relaxed">
+                  Builds the circuit gate-by-gate: reset, four interaction directions, measurement, and detectors. A $T_1/T_2$ idle channel is applied at <strong>every real waiting phase</strong>, exposing each platform's true time overhead.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          
+          <div class="col-span-6 space-y-4">
+            <div class="font-bold text-base text-beamerblue-dark flex items-center gap-1.5">
+              <i data-lucide="beaker" class="w-5 h-5 text-beamerblue-primary"></i> Select Numerical Experiment to Preview:
+            </div>
+            
+            
+            <div class="grid grid-cols-2 gap-2.5">
+              <button onclick="previewExperiment(1)" id="btn-exp-1" class="p-2.5 border text-sm font-bold rounded hover:bg-slate-50 transition text-left">
+                Exp 1: Logical vs. Gate Noise
+              </button>
+              <button onclick="previewExperiment(2)" id="btn-exp-2" class="p-2.5 border text-sm font-bold rounded hover:bg-slate-50 transition text-left">
+                Exp 2: Threshold vs. Code Distance
+              </button>
+              <button onclick="previewExperiment(3)" id="btn-exp-3" class="p-2.5 border text-sm font-bold rounded hover:bg-slate-50 transition text-left">
+                Exp 3: Natural Working Points
+              </button>
+              <button onclick="previewExperiment(4)" id="btn-exp-4" class="p-2.5 border text-sm font-bold rounded hover:bg-slate-50 transition text-left">
+                Exp 4: qLDPC vs. Surface Code
+              </button>
+            </div>
+
+            
+            <div id="exp-preview-desc" class="bg-beamerblue-light p-4 rounded-lg border-t-4 border-beamerblue-dark text-sm h-28 flex flex-col justify-center">
+              
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-8" class="hidden h-full flex flex-col justify-between animate-fadeIn">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="git-compare" class="text-beamerblue-primary"></i> Circuit-Level Modeling: Builtin vs. Compiler</span>
+          <span class="text-xs text-beamerblue-primary bg-blue-100 px-2.5 py-1 rounded">Structural Comparison & Noise Dynamics</span>
+        </h2>
+        
+        <div class="grid grid-cols-2 gap-6 my-auto">
+          
+          <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col h-[380px] justify-between">
+            <div>
+              <span class="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold text-[10px] mb-1.5">Builtin Model (Phenomenological Abstraction)</span>
+              <p class="text-xs text-slate-600 leading-normal mb-2">
+                Idealized circuits where gate scheduling details are omitted. A lumped, uniform, distance-independent <code>p_idle</code> is applied to every data qubit at the end of each round.
+              </p>
+            </div>
+            
+            
+            <div class="bg-slate-950 rounded p-2 flex items-center justify-center">
+              <svg class="w-full h-[120px]" viewBox="0 0 460 120">
+                
+                <line x1="20" y1="30" x2="440" y2="30" stroke="#cbd5e1" stroke-width="1.5"/>
+                <line x1="20" y1="60" x2="440" y2="60" stroke="#cbd5e1" stroke-width="1.5"/>
+                <line x1="20" y1="90" x2="440" y2="90" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text x="12" y="33" fill="#94a3b8" font-size="8" font-family="monospace">D1</text>
+                <text x="12" y="63" fill="#94a3b8" font-size="8" font-family="monospace">D2</text>
+                <text x="12" y="93" fill="#94a3b8" font-size="8" font-family="monospace">Anc</text>
+                
+                
+                <rect x="50" y="20" width="220" height="80" rx="4" fill="rgba(37, 99, 235, 0.2)" stroke="#2563eb" stroke-width="1.5"/>
+                <text x="160" y="64" fill="#60a5fa" font-size="10" font-weight="bold" text-anchor="middle">Ideal Clifford Stabilizer Round</text>
+
+                
+                <rect x="290" y="20" width="130" height="80" rx="4" fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="2 2"/>
+                <text x="355" y="55" fill="#fca5a5" font-size="9" font-weight="bold" text-anchor="middle">Lumped Noise Channel</text>
+                <text x="355" y="70" fill="#fecaca" font-size="8" font-family="monospace" text-anchor="middle">\(\Lambda(p_{\text{2Q}}, p_{\text{idle}}, p_{\text{meas}})\)</text>
+              </svg>
+            </div>
+            
+            <div class="bg-blue-50 p-2 rounded text-[11px] text-blue-900 border-l-2 border-blue-600 leading-normal">
+              No platform-specific latencies are modeled. It is excellent for analyzing pure asymptotic code thresholds, but ignores timing-dependent dephasing scaling.
+            </div>
+          </div>
+
+          
+          <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col h-[380px] justify-between">
+            <div>
+              <span class="inline-block px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-bold text-[10px] mb-1.5">Compiler Model (Platform & Timing Aware)</span>
+              <p class="text-xs text-slate-600 leading-normal mb-2">
+                Gates are compiled sequentially step-by-step. Real-time dephasing is modeled by integrating active gate, measurement, and shuttling durations with $T_1/T_2$ decay.
+              </p>
+            </div>
+            
+            
+            <div class="bg-slate-950 rounded p-2 flex items-center justify-center">
+              <svg class="w-full h-[120px]" viewBox="0 0 460 120">
+                
+                <line x1="20" y1="30" x2="440" y2="30" stroke="#cbd5e1" stroke-width="1.5"/>
+                <line x1="20" y1="60" x2="440" y2="60" stroke="#cbd5e1" stroke-width="1.5"/>
+                <line x1="20" y1="90" x2="440" y2="90" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text x="12" y="33" fill="#94a3b8" font-size="8" font-family="monospace">D1</text>
+                <text x="12" y="63" fill="#94a3b8" font-size="8" font-family="monospace">D2</text>
+                <text x="12" y="93" fill="#94a3b8" font-size="8" font-family="monospace">Anc</text>
+
+                
+                <line x1="140" y1="10" x2="140" y2="110" stroke="#475569" stroke-dasharray="2 2" stroke-width="1"/>
+                <line x1="280" y1="10" x2="280" y2="110" stroke="#475569" stroke-dasharray="2 2" stroke-width="1"/>
+                <text x="80" y="20" fill="#64748b" font-size="7" font-weight="bold" text-anchor="middle">TICK 1: GATES</text>
+                <text x="210" y="20" fill="#64748b" font-size="7" font-weight="bold" text-anchor="middle">TICK 2: SHUTTLE/CNOT</text>
+                <text x="360" y="20" fill="#64748b" font-size="7" font-weight="bold" text-anchor="middle">TICK 3: READOUT WAITS</text>
+
+                
+                <rect x="50" y="80" width="20" height="20" rx="2" fill="#2563eb" stroke="#1e3a8a"/>
+                <text x="60" y="92" fill="white" font-size="8" font-weight="bold" text-anchor="middle">H</text>
+                <rect x="40" y="22" width="80" height="16" rx="2" fill="rgba(239, 68, 68, 0.25)" stroke="#ef4444"/>
+                <text x="80" y="32" fill="#fca5a5" font-size="7" text-anchor="middle">\(\mathcal{E}_{\text{idle}}(t_{\text{gate}})\)</text>
+                <rect x="40" y="52" width="80" height="16" rx="2" fill="rgba(239, 68, 68, 0.25)" stroke="#ef4444"/>
+                <text x="80" y="62" fill="#fca5a5" font-size="7" text-anchor="middle">\(\mathcal{E}_{\text{idle}}(t_{\text{gate}})\)</text>
+
+                
+                <circle cx="210" cy="90" r="3" fill="#cbd5e1"/>
+                <line x1="210" y1="90" x2="210" y2="60" stroke="#cbd5e1" stroke-width="1"/>
+                <circle cx="210" cy="60" r="6" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+                <line x1="214" y1="60" x2="206" y2="60" stroke="#cbd5e1"/>
+                <line x1="210" y1="64" x2="210" y2="56" stroke="#cbd5e1"/>
+                <rect x="150" y="22" width="120" height="16" rx="2" fill="rgba(239, 68, 68, 0.25)" stroke="#ef4444"/>
+                <text x="210" y="32" fill="#fca5a5" font-size="7" text-anchor="middle">\(\mathcal{E}_{\text{idle}}(t_{\text{move}})\)</text>
+
+                
+                <rect x="300" y="80" width="20" height="20" rx="2" fill="#10b981" stroke="#047857"/>
+                <text x="310" y="92" fill="white" font-size="8" font-weight="bold" text-anchor="middle">M</text>
+                <rect x="290" y="22" width="140" height="46" rx="2" fill="rgba(239, 68, 68, 0.35)" stroke="#ef4444" stroke-width="1.5"/>
+                <text x="360" y="44" fill="#fca5a5" font-size="8" font-weight="bold" text-anchor="middle">Long Readout waiting idle decay</text>
+                <text x="360" y="55" fill="#fecaca" font-size="7" font-family="monospace" text-anchor="middle">\(\mathcal{E}_{\text{idle}}(t_{\text{meas}}) \propto 2d^2 - 1\)</text>
+              </svg>
+            </div>
+            
+            <div class="bg-purple-50 p-2 rounded text-[11px] text-purple-900 border-l-2 border-purple-600 leading-normal">
+              Idle errors scale directly with distance ($2d^2-1$). Increasing $d$ introduces more waiting physical qubits under continuous dephasing during shuttling or readout phases.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-9" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="trending-up" class="text-beamerblue-primary"></i> Experiment 1: Logical vs. Physical Noise Scaling</span>
+          <div class="flex gap-1.5">
+            <button onclick="toggleExpChart(1, 'builtin')" id="btn-chart-1-builtin" class="px-2.5 py-0.5 rounded text-xs font-bold bg-beamerblue-dark text-white shadow-sm">Builtin</button>
+            <button onclick="toggleExpChart(1, 'compiler')" id="btn-chart-1-compiler" class="px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 hover:bg-slate-300">Compiler</button>
+          </div>
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-6 items-center my-auto">
+          
+          <div class="col-span-7 flex justify-center items-center">
+            <div class="bg-white p-3 rounded-lg border shadow-sm w-full h-[260px] flex items-center justify-center relative">
+              
+              <img id="img-exp1" src="results/builtin/exp1_pl_vs_p.png" class="max-h-full max-w-full object-contain" alt="Experiment 1" />
+              
+              <div id="fallback-exp1" class="w-full h-full hidden">
+                <svg id="chart-exp1-svg" class="w-full h-full" viewBox="0 0 320 220"></svg>
+              </div>
+            </div>
+          </div>
+
+          
+          <div class="col-span-5 space-y-4.5">
+            <div class="beamer-block bg-beamerblue-light border-t-4 border-beamerblue-dark p-4">
+              <h4 class="font-bold text-beamerblue-dark text-sm flex items-center gap-1.5">
+                <i data-lucide="award" class="w-4 h-4"></i> Core Scientific Insight
+              </h4>
+              <p id="exp1-conclusion-text" class="text-sm text-gray-700 leading-relaxed mt-2">
+                
+              </p>
+            </div>
+            
+            <div class="bg-slate-50 p-3 rounded border text-xs text-gray-500 font-mono">
+              <strong>Fixed Parameters:</strong> Distance $d=5$, repetitive syndrome extraction rounds $R=5$. Physical noise scale ranges from $0.3\times$ to $3.0\times$ natural baselines.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-10" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="bar-chart-2" class="text-beamerblue-primary"></i> Experiment 2: Suppression vs. Code Distance</span>
+          <div class="flex gap-1.5">
+            <button onclick="toggleExpChart(2, 'builtin')" id="btn-chart-2-builtin" class="px-2.5 py-0.5 rounded text-xs font-bold bg-beamerblue-dark text-white shadow-sm">Builtin</button>
+            <button onclick="toggleExpChart(2, 'compiler')" id="btn-chart-2-compiler" class="px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 hover:bg-slate-300">Compiler</button>
+          </div>
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-6 items-center my-auto">
+          
+          <div class="col-span-7 flex justify-center items-center">
+            <div class="bg-white p-3 rounded-lg border shadow-sm w-full h-[260px] flex items-center justify-center relative">
+              
+              <img id="img-exp2" src="results/builtin/exp2_pl_vs_d.png" class="max-h-full max-w-full object-contain" alt="Experiment 2" />
+              
+              <div id="fallback-exp2" class="w-full h-full hidden">
+                <svg id="chart-exp2-svg" class="w-full h-full" viewBox="0 0 320 220"></svg>
+              </div>
+            </div>
+          </div>
+
+          
+          <div class="col-span-5 space-y-4.5">
+            <div class="beamer-block bg-beamerblue-light border-t-4 border-beamerblue-dark p-4">
+              <h4 class="font-bold text-beamerblue-dark text-sm flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i> The Incompressible Decohere Floor
+              </h4>
+              <p id="exp2-conclusion-text" class="text-sm text-gray-700 leading-relaxed mt-2">
+                
+              </p>
+            </div>
+            
+            <div class="bg-slate-50 p-3 rounded border text-xs text-gray-500 font-mono">
+              <strong>Fixed Parameters:</strong> $p_{2Q} = 0.1\%$, scanning $d \in \{3,5,7,9\}$. Relies on adaptive Monte Carlo sampling with up to $10^7$ shots to suppress noise standard deviations.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-11" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center gap-2">
+          <i data-lucide="scale" class="text-beamerblue-primary"></i> Experiment 3: Natural Working Point & Target Distances
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-6 items-center my-auto">
+          
+          <div class="col-span-7 space-y-4">
+            <div class="bg-white rounded-lg border shadow-md overflow-hidden text-sm">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-beamerblue-dark text-white font-semibold">
+                    <th class="p-3">Platform</th>
+                    <th class="p-3">Builtin PL (d=9)</th>
+                    <th class="p-3">Compiler PL (d=9)</th>
+                    <th class="p-3">Req. Distance for $10^{-6}$</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr class="hover:bg-slate-50">
+                    <td class="p-2.5 font-bold text-blue-700">Superconducting</td>
+                    <td class="p-2.5 font-mono text-sm">3.91e-5</td>
+                    <td class="p-2.5 font-mono bg-red-50 text-red-700 text-sm">2.56e-3</td>
+                    <td class="p-2.5 font-bold text-sm">d=15 (Builtin) | <span class="text-red-600">d &gt; 19</span> (Compiler)</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50">
+                    <td class="p-2.5 font-bold text-amber-700">Neutral Atom</td>
+                    <td class="p-2.5 font-mono text-sm">6.37e-4</td>
+                    <td class="p-2.5 font-mono bg-red-50 text-red-700 text-sm">2.76e-2</td>
+                    <td class="p-2.5 font-bold text-sm">d=7 (Builtin) | <span class="text-red-600">d &gt; 19</span> (Compiler)</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50">
+                    <td class="p-2.5 font-bold text-purple-700">Trapped Ion</td>
+                    <td class="p-2.5 font-mono text-green-700 font-semibold text-sm">5.56e-7</td>
+                    <td class="p-2.5 font-mono bg-red-50 text-red-700 text-sm">3.16e-3</td>
+                    <td class="p-2.5 font-bold text-sm">d=9 (Builtin) | <span class="text-red-600">d &gt; 19</span> (Compiler)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="text-xs text-gray-500 font-mono leading-relaxed">
+              * The table outlines a stark divergence between optimistic aggregate models and compiler models integrating platform idle timings under current repo default configurations.
+            </div>
+          </div>
+
+          
+          <div class="col-span-5 space-y-4">
+            <div class="beamer-block bg-beamerblue-light border-t-4 border-beamerblue-dark p-4">
+              <h4 class="font-bold text-beamerblue-dark text-sm flex items-center gap-1.5">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-beamerblue-primary"></i> The $P_L = 10^{-6}$ Feasibility Abyss
+              </h4>
+              <p class="text-sm text-gray-700 leading-relaxed mt-2">
+                Under the <strong>Builtin Model</strong>, the target-distance search is optimistic: trapped ions reach $P_L=10^{-6}$ near $d=9$, neutral atoms near $d=7$ in the reported target sweep, and superconducting qubits near $d=15$. The lesson is not that one single hardware number wins; the aggregate error budget and fitted distance scaling set the code size.
+              </p>
+              <p class="text-sm text-gray-700 leading-relaxed mt-1.5">
+                Under the <strong>Compiler Model</strong>, none of the three reaches $10^{-6}$ even at $d=19$. This is not decoder failure but a timing wall: idle error accumulates as ${\sim}(2d^2-1)\,p_{\text{idle}}$, so enlarging the code feeds back nearly as much waiting-induced noise as it removes. The gap between the two columns is exactly the cost the abstract model omits.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-12" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="git-merge" class="text-beamerblue-primary"></i> Experiment 4: Neutral-Atom qLDPC vs. Surface Code</span>
+          <span class="text-xs text-amber-700 bg-amber-100 px-2 py-1 rounded">Architectural Code Family Challenge</span>
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-6 items-center my-auto">
+          
+          <div class="col-span-7 flex justify-center items-center">
+            <div class="bg-white p-3 rounded-lg border shadow-sm w-full h-[260px] flex items-center justify-center relative">
+              
+              <img id="img-exp4" src="results/exp4_qldpc_vs_surface.png" class="max-h-full max-w-full object-contain" alt="Experiment 4" />
+              
+              <div id="fallback-exp4" class="w-full h-full hidden">
+                <svg id="chart-exp4-svg" class="w-full h-full" viewBox="0 0 320 220"></svg>
+              </div>
+            </div>
+          </div>
+
+          
+          <div class="col-span-5 space-y-3">
+            <div class="beamer-block bg-beamerblue-light border-t-4 border-beamerblue-dark p-3">
+              <h4 class="font-bold text-beamerblue-dark text-xs flex items-center gap-1.5">
+                <i data-lucide="info" class="w-4 h-4 text-beamerblue-primary"></i> Tanner Graph & Shuttling Penalty
+              </h4>
+              <p class="text-xs text-gray-700 leading-normal mt-1">
+                BB qLDPC $[[72,12,6]]$ has a high encoding rate: 144 physical qubits (72 data + 72 ancilla) carry $k=12$ logical qubits — an $\approx 8.3\%$ density versus $\approx 2.0\%$ for a $d{=}5$ surface code. The price is a non-local Tanner graph whose stabilizer checks are not geometrically local.
+              </p>
+              <p class="text-xs text-gray-700 leading-normal mt-1">
+                On the dual-zone atom array this demands <strong>8 move batches/round</strong> instead of 4. In the experiment table this doubles the counted move-idle exposure from $0.8\,$ms to $1.6\,$ms; equivalently, when out-and-back motion is counted per gate batch, the full surface-code round already reaches the millisecond scale. Since this is comparable to $T_2=1\,$ms, shuttling-induced dephasing dominates both codes.
+              </p>
+              <p class="text-xs text-gray-700 leading-normal mt-1 font-semibold">
+                Decoder: the qLDPC uses BP+OSD (OSD-0), since its circuit-level DEM contains hyperedges (one fault can flip more than two detectors) that ordinary MWPM cannot handle; the surface code uses MWPM.
+              </p>
+              <p class="text-[10px] text-red-600 leading-tight">
+                * Only 50 shots/point (BP+OSD is slow), so qLDPC error bars are large — read trends, not exact values. Above threshold, Surface $d{=}5$ also exceeds $d{=}3$ in $P_L$, as 49 physical qubits accrue more idle noise than 17.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="slide-13" class="hidden h-full flex flex-col justify-between">
+        <h2 class="text-2xl font-bold text-beamerblue-dark border-b pb-1.5 flex items-center gap-2">
+          <i data-lucide="trophy" class="text-beamerblue-primary"></i> Summary, Limitations, & Next Milestone Steps
+        </h2>
+        
+        <div class="grid grid-cols-12 gap-6 my-auto">
+          
+          <div class="col-span-6 space-y-2.5">
+            <div class="beamer-block bg-beamerblue-light border-l-4 border-beamerblue-dark p-2.5 text-sm">
+              <h4 class="font-bold text-beamerblue-dark text-[13px]">1. One Language, Two Models</h4>
+              <p class="text-gray-600 mt-0.5 leading-snug text-xs">
+                The surface code is a unified benchmark across all three platforms — but comparison demands separating the abstract noise model from the platform timing model. Builtin confirms sub-threshold exponential suppression; the compiler exposes an idle-noise floor from real scheduling.
+              </p>
+            </div>
+            
+            <div class="beamer-block bg-beamerblue-light border-l-4 border-beamerblue-dark p-2.5 text-sm">
+              <h4 class="font-bold text-beamerblue-dark text-[13px]">2. Timing Dominates, Not Gates</h4>
+              <p class="text-gray-600 mt-0.5 leading-snug text-xs">
+                In platform-aware models, $P_L$ is set by decoherence from waiting, measurement, movement and transport — not the two-qubit gate error itself. Neutral atoms are the extreme: shuttling time rivals $T_2$, pushing $P_L$ far above the builtin expectation.
+              </p>
+            </div>
+
+            <div class="beamer-block bg-beamerblue-light border-l-4 border-beamerblue-dark p-2.5 text-sm">
+              <h4 class="font-bold text-beamerblue-dark text-[13px]">3. Distance ≠ Guaranteed Suppression</h4>
+              <p class="text-gray-600 mt-0.5 leading-snug text-xs">
+                Increasing $d$ need not lower $P_L$. When idle exposure grows as ${\sim}d^2$ with the qubit count, the correction gain is cancelled — seen in both the surface-code compiler runs and the qLDPC comparison.
+              </p>
+            </div>
+
+            <div class="beamer-block bg-beamerblue-light border-l-4 border-beamerblue-dark p-2.5 text-sm">
+              <h4 class="font-bold text-beamerblue-dark text-[13px]">4. qLDPC: Rate vs. Connectivity</h4>
+              <p class="text-gray-600 mt-0.5 leading-snug text-xs">
+                High encoding rate is a real asset, but must be weighed against connectivity and scheduling cost. On the dual-zone atom model, BB qLDPC's non-local checks need more move batches, so its per-logical $P_L$ exceeds the surface code — yet $k=12$ may still pay off at large scale.
+              </p>
+            </div>
+          </div>
+
+          
+          <div class="col-span-6 space-y-4">
+            <div class="beamer-block bg-amber-50 border-t-4 border-amber-600 p-4 text-sm">
+              <h4 class="font-bold text-amber-800 flex items-center gap-1.5"><i data-lucide="map" class="w-4 h-4"></i> Next Steps & Future Directions</h4>
+              <ul class="list-disc pl-5 mt-2 space-y-2 text-gray-700 leading-relaxed text-xs">
+                <li><strong>Sensitivity sweep:</strong> Scan $T_2$, measurement, movement and transport times to pin down the hardware metrics each platform needs to reach $P_L = 10^{-6}$.</li>
+                <li><strong>Compiler scheduling &amp; layout:</strong> Optimize platform-aware scheduling and layout — especially neutral-atom qLDPC qubit placement and batching — to cut idle exposure.</li>
+                <li><strong>qLDPC statistics &amp; decoders:</strong> Raise shot counts and upgrade from OSD-0 to stronger OSD-CS or windowed decoding, separating the physical shuttling penalty from low-order decoder loss.</li>
+              </ul>
+            </div>
+            
+            <div class="text-center font-bold text-beamerblue-dark text-base animate-pulse flex items-center justify-center gap-1.5 bg-blue-100 py-2 rounded-lg border border-blue-200 shadow-sm">
+              <i data-lucide="check-square" class="w-5 h-5"></i> Thank You for Listening! Q&A
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    
+    <footer class="bg-beamergray-foot text-xs border-t border-gray-300 grid grid-cols-3 text-center text-gray-700 font-semibold select-none z-10">
+      <div class="bg-blue-900 text-white py-1.5 rounded-bl-lg flex items-center justify-center gap-1">
+        <i data-lucide="user" class="w-3.5 h-3.5"></i> ZJU QI 2026 Group B
+      </div>
+      <div class="bg-blue-800 text-white py-1.5 flex items-center justify-center gap-1 border-x border-blue-900">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Surface-Code Benchmarking
+      </div>
+      <div class="bg-blue-700 text-white py-1.5 rounded-br-lg flex items-center justify-between px-4">
+        <div class="flex gap-2">
+          <button onclick="prevSlide()" class="hover:text-amber-400 transition" title="Prev Slide (Left Arrow)"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <button onclick="nextSlide()" class="hover:text-amber-400 transition" title="Next Slide (Right Arrow)"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+        <span id="beamer-page-number" class="font-mono">Slide 1 / 14</span>
+      </div>
+    </footer>
+
+  </div>
+
+  
+  <script>
+
+    let currentSlide = 0;
+    const totalSlides = 14;
+
+
+    const pipelineData = {
+      1: {
+        params: "<li><b>$p_{\\text{reset}}$:</b> Ancilla preparation error budget.</li><li><b>$p_{\\text{meas}}$:</b> Measurement flip error probability.</li><li><b>Typical duration:</b> $\\lt 1\\mu\\text{s}$</li>",
+        formula: "P_{\\text{SPAM}} = c_{\\text{init}} p_{\\text{reset}} + c_{\\text{meas}} p_{\\text{meas}}",
+        desc: "Initializes physical qubits to reference states $|0\\rangle$ or $|+\\rangle$. Highly critical for establishing correct stabilizer measurement environments."
+      },
+      2: {
+        params: "<li><b>$p_{1Q}$:</b> Single-qubit control noise.</li><li><b>$p_{2Q}$:</b> Two-qubit entangling gates.</li><li><b>Ticks 1-4:</b> Dictated by CNOT/CZ scheduling directions.</li>",
+        formula: "p_{\\text{eff}} = c_1 p_{1Q} + c_2 p_{2Q} + c_3 p_{\\text{meas}} + c_4 p_{\\text{reset}} + c_5 p_{\\text{idle}}",
+        desc: "Executes directional stabilizer cycles to entangle physical data and measurement ancilla qubits. Direct noise propagates quickly through overlapping gates."
+      },
+      3: {
+        params: "<li><b>$t_{\\text{meas}}$:</b> Readout latency, triggering idle waits for other qubits.</li><li><b>Measurement fidelity limit:</b> Highly crucial for syndrome quality.</li>",
+        formula: "p_{\\text{error}} \\propto p_{\\text{meas}} + (1 - e^{-t_{\\text{meas}}/T_1})",
+        desc: "Acquires stabilizer outcomes. In superconducting qubits, long dispersive readouts force neighboring qubits to undergo substantial wait-time decoherence."
+      },
+      4: {
+        params: "<li><b>$T_1, T_2$:</b> Energy relaxation and dephasing bounds (physical constraint $T_2 \\le 2T_1$).</li><li><b>$\\Delta t$:</b> Real waiting / shuttle / readout duration.</li>",
+        formula: "\\begin{aligned} p_x=p_y &=\\tfrac{1}{4}\\big(1-e^{-\\Delta t/T_1}\\big)\\\\[2pt] p_z &=\\tfrac{1}{2}\\big(1-e^{-\\Delta t/T_2}\\big)-p_x \\end{aligned}",
+        desc: "Amplitude damping and dephasing during idle time are twirled into a Pauli channel. In the compiler this is <strong>derived from $\\Delta t$ and $T_1/T_2$</strong> — not a fixed probability — so long waits, shuttling, or transport make idle the dominant error source."
+      }
+    };
+
+
+    const expPreviews = {
+      1: "Fixes $d=5$ ($R=5$ rounds) and scales every platform's natural noise by $p_{\\mathrm{scale}}\\in[0.3,3.0]$. Contrasts the clean power-law of the builtin model against the compiler's timing-driven noise floor.",
+      2: "Fixes the two-qubit baseline at $p=0.1\\%$ and scans $d\\in\\{3,5,7,9\\}$. Tests whether larger distance still gives exponential suppression once idle noise scales with the $\\sim 2d^2-1$ qubit footprint.",
+      3: "Uses each platform's natural working point under both models for $d\\in\\{3,5,7,9\\}$, and estimates the minimum distance to reach the $P_L=10^{-6}$ target — exposing the gap between builtin optimism and compiler reality.",
+      4: "On the neutral-atom model, compares rotated surface code ($d=3,5$, MWPM) with the $[[72,12,6]]$ BB qLDPC code ($k=12$, BP+OSD), weighing encoding density against extra shuttling batches."
+    };
+
+
+    let currentExp1Mode = 'builtin';
+    let currentExp2Mode = 'builtin';
+
+
+    const expConclusions = {
+      1: {
+        builtin: "Under the abstract (builtin) model, $P_L$ spans several orders of magnitude across platforms and tracks the physical error budget directly: trapped ions, with the lowest gate and idle errors, reach $\\sim\\!10^{-6}$ at $0.3\\times$, while neutral atoms sit highest. Scaling the noise from $0.3\\times$ to $3.0\\times$ degrades every platform smoothly — the abstract model transmits hardware quality straight into logical performance.",
+        compiler: "Once platform-aware timing is compiled in, a noise floor appears. Because $p_{\\text{eff}} = c_1 p_{1Q} + c_2 p_{2Q} + \\dots + c_5 p_{\\text{idle}}$ is dominated by the idle term $c_5 p_{\\text{idle}}$, cleaning up the gates barely moves $P_L$. Neutral atoms are worst: their ${\\approx}1.6\\,\\text{ms}$ shuttling cycle rivals $T_2 = 1\\,\\text{ms}$, pinning $P_L$ near $10^{-2}$ no matter how good the gates are."
+      },
+      2: {
+        builtin: "At fixed $p_{2Q} = 0.1\\%$, the abstract model shows textbook exponential suppression $P_L \\approx \\Lambda\\, p^{(d+1)/2}$: each step in $d$ cuts $P_L$ by a near-constant factor (trapped ion: $5.24\\times10^{-4}$ at $d{=}3 \\to 4.78\\times10^{-7}$ at $d{=}9$). Below threshold, larger codes buy exponentially better protection.",
+        compiler: "The platform-aware curves are essentially flat — increasing $d$ does <strong>not</strong> lower $P_L$. This is structural: the per-round idle burden grows as $p_{\\text{idle,total}} \\sim (2d^2-1)\\, p_{\\text{idle}}^{(1)}$, so a larger code adds exactly the waiting-induced errors that the extra distance was meant to remove. Distance only helps once the time cost of each round is suppressed first."
+      }
+    };
+
+
+    function updateExpConclusion(expId, mode) {
+      const el = document.getElementById(`exp${expId}-conclusion-text`);
+      if (!el || !expConclusions[expId]) return;
+      el.innerHTML = expConclusions[expId][mode] || '';
+      safeRenderMath(el);
+    }
+
+
+    let gridQubitsState = Array(10).fill(0);
+
+
+    let atomConfig = 'SQUARE';
+    let isAtomGateRunning = false;
+
+
+    let ionShuttled = false;
+    let isIonGateRunning = false;
+
+
+    function adjustScale() {
+      const container = document.getElementById('presentation-container');
+      if (!container) return;
+      const baseWidth = 1120;
+      const baseHeight = 630;
+      const winWidth = window.innerWidth;
+      const winHeight = window.innerHeight;
+      
+      const scaleX = winWidth / baseWidth;
+      const scaleY = winHeight / baseHeight;
+      const scale = Math.min(scaleX, scaleY);
+      
+      container.style.transform = `scale(${scale})`;
+      container.style.transformOrigin = 'center center';
+    }
+
+
+    window.onload = function() {
+      lucide.createIcons();
+      renderAllMath();
+
+
+      selectPipelineStep(1);
+      previewExperiment(1);
+      updateTopNavigation();
+
+
+      updateExperimentImage(1, currentExp1Mode);
+      updateExperimentImage(2, currentExp2Mode);
+      updateExperimentImage(4, '');
+
+
+      updateExpConclusion(1, currentExp1Mode);
+      updateExpConclusion(2, currentExp2Mode);
+
+
+      adjustScale();
+      window.addEventListener('resize', adjustScale);
+      
+
+      window.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.code === 'ArrowRight' || e.key === ' ' || e.code === 'Space') {
+          nextSlide();
+          e.preventDefault();
+        } else if (e.key === 'ArrowLeft' || e.code === 'ArrowLeft') {
+          prevSlide();
+          e.preventDefault();
+        }
+      });
+
+
+      const container = document.getElementById('presentation-container');
+      if (container) {
+        container.addEventListener('click', function() {
+          window.focus();
+        });
+      }
+    };
+
+
+    function safeRenderMath(element) {
+      if (!element) return;
+      try {
+        if (typeof renderMathInElement === 'function') {
+          renderMathInElement(element, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false},
+              {left: '\\(', right: '\\)', display: false},
+              {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
+          });
+        }
+      } catch (err) {
+        console.warn("KaTeX rendering failed for element: ", err);
+      }
+    }
+
+
+    function renderAllMath() {
+      try {
+        if (typeof renderMathInElement === 'function') {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false},
+              {left: '\\(', right: '\\)', display: false},
+              {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
+          });
+        }
+      } catch (err) {
+        console.warn("KaTeX rendering encountered an issue: ", err);
+      }
+    }
+
+
+    function updateTopNavigation() {
+      const sections = [
+        { id: 'nav-sec-1', start: 0, end: 1 },
+        { id: 'nav-sec-2', start: 2, end: 6 },
+        { id: 'nav-sec-3', start: 7, end: 12 },
+        { id: 'nav-sec-4', start: 13, end: 13 }
+      ];
+
+      sections.forEach(sec => {
+        const el = document.getElementById(sec.id);
+        if (el) {
+          if (currentSlide >= sec.start && currentSlide <= sec.end) {
+            el.classList.remove('opacity-50');
+            el.classList.add('opacity-100', 'text-amber-400');
+          } else {
+            el.classList.remove('opacity-100', 'text-amber-400');
+            el.classList.add('opacity-50');
+          }
+        }
+      });
+    }
+
+
+    function showSlide(index) {
+      if (index < 0 || index >= totalSlides) return;
+      
+      const currentSlideEl = document.getElementById(`slide-${currentSlide}`);
+      if (currentSlideEl) {
+        currentSlideEl.classList.add('hidden');
+        currentSlideEl.classList.remove('slide-active');
+      }
+
+      currentSlide = index;
+
+      const nextSlideEl = document.getElementById(`slide-${currentSlide}`);
+      if (nextSlideEl) {
+        nextSlideEl.classList.remove('hidden');
+        setTimeout(() => {
+          nextSlideEl.classList.add('slide-active');
+        }, 10);
+      }
+
+      document.getElementById('beamer-page-number').innerText = `Slide ${currentSlide + 1} / ${totalSlides}`;
+      updateTopNavigation();
+
+      if (currentSlide === 2) {
+        resetSurfaceCodeGrid();
+      } else if (currentSlide === 5) {
+        resetAtomState();
+      } else if (currentSlide === 6) {
+        resetIonState();
+      } else if (currentSlide === 8) {
+
+        const slide8El = document.getElementById('slide-8');
+        safeRenderMath(slide8El);
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    // =========================================================================
+
+    // =========================================================================
+    function toggleQubitError(id) {
+      gridQubitsState[id] = (gridQubitsState[id] + 1) % 4;
+      
+      const qubitEl = document.getElementById(`qubit-D${id}`);
+      const circleEl = qubitEl.querySelector('circle');
+      
+      if (gridQubitsState[id] === 0) {
+        circleEl.setAttribute('fill', '#1e3a8a');
+      } else if (gridQubitsState[id] === 1) {
+        circleEl.setAttribute('fill', '#3b82f6');
+      } else if (gridQubitsState[id] === 2) {
+        circleEl.setAttribute('fill', '#ef4444');
+      } else if (gridQubitsState[id] === 3) {
+        circleEl.setAttribute('fill', '#a855f7');
+      }
+
+      updateStabilizerSyndromes();
+    }
+
+    function resetSurfaceCodeGrid() {
+      gridQubitsState = Array(10).fill(0);
+      for (let i = 1; i <= 9; i++) {
+        const qubitEl = document.getElementById(`qubit-D${i}`);
+        if (qubitEl) {
+          const circleEl = qubitEl.querySelector('circle');
+          circleEl.setAttribute('fill', '#1e3a8a');
+        }
+      }
+      updateStabilizerSyndromes();
+    }
+
+    function updateStabilizerSyndromes() {
+      const stabilizers = {
+        'X1': { type: 'Z', neighbors: [1, 2, 4, 5], elId: 'stab-X1', activeColor: '#ea580c' },
+        'X2': { type: 'Z', neighbors: [5, 6, 8, 9], elId: 'stab-X2', activeColor: '#ea580c' },
+        'X3': { type: 'Z', neighbors: [3, 6],       elId: 'stab-X3', activeColor: '#ea580c' },
+        'X4': { type: 'Z', neighbors: [4, 7],       elId: 'stab-X4', activeColor: '#ea580c' },
+        
+        'Z1': { type: 'X', neighbors: [2, 3, 5, 6], elId: 'stab-Z1', activeColor: '#0891b2' },
+        'Z2': { type: 'X', neighbors: [4, 5, 7, 8], elId: 'stab-Z2', activeColor: '#0891b2' },
+        'Z3': { type: 'X', neighbors: [1, 4],       elId: 'stab-Z3', activeColor: '#0891b2' },
+        'Z4': { type: 'X', neighbors: [6, 9],       elId: 'stab-Z4', activeColor: '#0891b2' }
+      };
+
+      for (const [name, stab] of Object.entries(stabilizers)) {
+        let oddErrorCount = 0;
+        
+        stab.neighbors.forEach(qId => {
+          const state = gridQubitsState[qId];
+          if (stab.type === 'X') {
+            if (state === 1 || state === 3) oddErrorCount++;
+          } else {
+            if (state === 2 || state === 3) oddErrorCount++;
+          }
+        });
+
+        const triggered = oddErrorCount % 2 !== 0;
+        const targetEl = document.getElementById(stab.elId);
+        if (targetEl) {
+          const polyOrRect = targetEl.querySelector('polygon') || targetEl.querySelector('rect');
+          if (triggered) {
+            polyOrRect.setAttribute('fill', '#f43f5e');
+            polyOrRect.classList.add('animate-pulse');
+          } else {
+            polyOrRect.setAttribute('fill', stab.activeColor);
+            polyOrRect.classList.remove('animate-pulse');
+          }
+        }
+      }
+    }
+
+    // =========================================================================
+
+    // =========================================================================
+    function selectPipelineStep(stepId) {
+      for (let i = 1; i <= 4; i++) {
+        const stepEl = document.getElementById(`pipeline-step-${i}`);
+        if (stepEl) {
+          if (i === stepId) {
+            stepEl.className = "cursor-pointer p-3 rounded-lg border-2 border-beamerblue-dark bg-beamerblue-light transition-all shadow-md";
+          } else {
+            stepEl.className = "cursor-pointer p-3 rounded-lg border border-gray-300 bg-white transition-all hover:bg-slate-50 shadow-sm";
+          }
+        }
+      }
+
+      const stepData = pipelineData[stepId];
+      if (stepData) {
+        const detailsContainer = document.getElementById('pipeline-param-details');
+        detailsContainer.innerHTML = stepData.params;
+
+        safeRenderMath(detailsContainer);
+
+        document.getElementById('pipeline-math-explanation').innerHTML = stepData.desc;
+
+        const formulaBox = document.getElementById('pipeline-formula-box');
+        formulaBox.innerHTML = '';
+        
+
+        try {
+          if (typeof katex !== 'undefined') {
+            katex.render(stepData.formula, formulaBox, {
+              displayMode: true,
+              throwOnError: false
+            });
+          }
+        } catch (err) {
+          console.warn("KaTeX dynamic rendering failed:", err);
+          formulaBox.innerHTML = `$$${stepData.formula}$$`;
+          safeRenderMath(formulaBox);
+        }
+      }
+    }
+
+    // =========================================================================
+
+    // =========================================================================
+    function resetAtomState() {
+      atomConfig = 'SQUARE';
+      isAtomGateRunning = false;
+      document.getElementById('atom-status-panel').innerText = "Array: SQUARE | Status: READY TO RUN";
+      document.getElementById('btn-run-atom').disabled = false;
+      document.getElementById('btn-run-atom').innerText = "Simulate Rydberg CZ Gate";
+      document.getElementById('tweezer-beams').style.opacity = '0';
+      document.getElementById('rydberg-blockade-sphere').style.opacity = '0';
+      document.getElementById('rydberg-blockade-sphere').setAttribute('r', '0');
+      document.getElementById('rydberg-text').style.opacity = '0';
+
+
+      setAtomCoordinates([
+        { id: 1, cx: 60, cy: 65 },  { id: 2, cx: 120, cy: 65 },  { id: 3, cx: 180, cy: 65 },
+        { id: 4, cx: 60, cy: 110 }, { id: 5, cx: 120, cy: 110 }, { id: 6, cx: 180, cy: 110 },
+        { id: 7, cx: 60, cy: 155 }, { id: 8, cx: 120, cy: 155 }, { id: 9, cx: 180, cy: 155 }
+      ]);
+    }
+
+    function setAtomCoordinates(coords) {
+      coords.forEach(c => {
+        const atom = document.getElementById(`atom-node-${c.id}`);
+        if (atom) {
+          atom.setAttribute('cx', c.cx);
+          atom.setAttribute('cy', c.cy);
+          atom.setAttribute('fill', '#38bdf8');
+        }
+      });
+    }
+
+    function triggerAtomReconfigure() {
+      if (isAtomGateRunning) return;
+      const statusEl = document.getElementById('atom-status-panel');
+      
+      if (atomConfig === 'SQUARE') {
+        atomConfig = 'TRIANGLE';
+        statusEl.innerText = "Array: TRIANGULAR (non-local check layout) | Status: RECONFIGURING...";
+
+        setAtomCoordinates([
+          { id: 1, cx: 60, cy: 65 },  { id: 2, cx: 120, cy: 65 },  { id: 3, cx: 180, cy: 65 },
+          { id: 4, cx: 90, cy: 110 }, { id: 5, cx: 150, cy: 110 }, { id: 6, cx: 210, cy: 110 },
+          { id: 7, cx: 60, cy: 155 }, { id: 8, cx: 120, cy: 155 }, { id: 9, cx: 180, cy: 155 }
+        ]);
+        setTimeout(() => {
+          statusEl.innerText = "Array: TRIANGULAR | Status: RECONFIGURED COMPLETED";
+        }, 800);
+      } else {
+        atomConfig = 'SQUARE';
+        statusEl.innerText = "Array: SQUARE (local surface-code layout) | Status: RECONFIGURING...";
+        setAtomCoordinates([
+          { id: 1, cx: 60, cy: 65 },  { id: 2, cx: 120, cy: 65 },  { id: 3, cx: 180, cy: 65 },
+          { id: 4, cx: 60, cy: 110 }, { id: 5, cx: 120, cy: 110 }, { id: 6, cx: 180, cy: 110 },
+          { id: 7, cx: 60, cy: 155 }, { id: 8, cx: 120, cy: 155 }, { id: 9, cx: 180, cy: 155 }
+        ]);
+        setTimeout(() => {
+          statusEl.innerText = "Array: SQUARE | Status: RECONFIGURED COMPLETED";
+        }, 800);
+      }
+    }
+
+    function runAtomRydbergGate() {
+      if (isAtomGateRunning) return;
+      isAtomGateRunning = true;
+      
+      const statusEl = document.getElementById('atom-status-panel');
+      const btn = document.getElementById('btn-run-atom');
+      
+      btn.disabled = true;
+      btn.innerText = "Running Gate...";
+
+
+
+      const idA = 5, idB = 6;
+      const atomA = document.getElementById(`atom-node-${idA}`);
+      const atomB = document.getElementById(`atom-node-${idB}`);
+      
+      const initX_A = parseFloat(atomA.getAttribute('cx'));
+      const initY_A = parseFloat(atomA.getAttribute('cy'));
+      const initX_B = parseFloat(atomB.getAttribute('cx'));
+      const initY_B = parseFloat(atomB.getAttribute('cy'));
+
+
+      statusEl.innerText = "Step 1: Tweezers descend and lock qubits (A & B)...";
+      const beams = document.getElementById('tweezer-beams');
+      const beam1 = document.getElementById('tweezer-1');
+      const beam2 = document.getElementById('tweezer-2');
+      
+      beam1.setAttribute('x', initX_A - 5);
+      beam2.setAttribute('x', initX_B - 5);
+      beams.style.opacity = '1';
+
+
+      setTimeout(() => {
+        statusEl.innerText = "Step 2: Shuttling qubits to Entangling Zone (t_move = 200us)...";
+        atomA.setAttribute('cx', 330);
+        atomA.setAttribute('cy', 100);
+        atomB.setAttribute('cx', 370);
+        atomB.setAttribute('cy', 100);
+        
+        beam1.setAttribute('x', 325);
+        beam2.setAttribute('x', 365);
+        
+        atomA.setAttribute('fill', '#fbbf24');
+        atomB.setAttribute('fill', '#fbbf24');
+      }, 1000);
+
+
+      setTimeout(() => {
+        statusEl.innerText = "Step 3: UV pulse trigger! Rydberg Blockade activated ($R_b$).";
+        
+        atomA.setAttribute('fill', '#ef4444');
+        atomB.setAttribute('fill', '#ef4444');
+
+        const blockade = document.getElementById('rydberg-blockade-sphere');
+        const text = document.getElementById('rydberg-text');
+        
+        blockade.style.opacity = '1';
+        blockade.setAttribute('r', '60');
+        text.style.opacity = '1';
+      }, 2200);
+
+
+      setTimeout(() => {
+        statusEl.innerText = "Step 4: Shutting down UV. Returning qubits to storage...";
+        
+        const blockade = document.getElementById('rydberg-blockade-sphere');
+        const text = document.getElementById('rydberg-text');
+        blockade.style.opacity = '0';
+        blockade.setAttribute('r', '0');
+        text.style.opacity = '0';
+
+        atomA.setAttribute('cx', initX_A);
+        atomA.setAttribute('cy', initY_A);
+        atomB.setAttribute('cx', initX_B);
+        atomB.setAttribute('cy', initY_B);
+        
+        beam1.setAttribute('x', initX_A - 5);
+        beam2.setAttribute('x', initX_B - 5);
+
+        atomA.setAttribute('fill', '#38bdf8');
+        atomB.setAttribute('fill', '#38bdf8');
+      }, 3800);
+
+
+      setTimeout(() => {
+        beams.style.opacity = '0';
+        statusEl.innerText = "Gate finished. Full out-and-back transport budget is about 1.6 ms; shuttling dominates the round time.";
+        btn.disabled = false;
+        btn.innerText = "Simulate Rydberg CZ Gate";
+        isAtomGateRunning = false;
+      }, 4800);
+    }
+
+    // =========================================================================
+
+    // =========================================================================
+    function resetIonState() {
+      ionShuttled = false;
+      isIonGateRunning = false;
+      document.getElementById('ion-status-panel').innerText = "Electrodes: ALIGNED | Status: READY";
+      document.getElementById('phonon-bus-spring').style.opacity = '0';
+      document.getElementById('readout-laser').style.opacity = '0';
+      document.getElementById('fluorescence-glow').style.opacity = '0';
+
+      const ion1 = document.getElementById('ion-node-1');
+      const ion2 = document.getElementById('ion-node-2');
+      if (ion1 && ion2) {
+        ion1.setAttribute('cx', 75);
+        ion1.setAttribute('cy', 110);
+        ion2.setAttribute('cx', 375);
+        ion2.setAttribute('cy', 110);
+      }
+    }
+
+    function triggerIonShuttle() {
+      if (isIonGateRunning) return;
+      const statusEl = document.getElementById('ion-status-panel');
+      const ion1 = document.getElementById('ion-node-1');
+      const ion2 = document.getElementById('ion-node-2');
+
+      if (!ionShuttled) {
+        ionShuttled = true;
+        statusEl.innerText = "Status: Ions shuttling to Processing Zone (t_transport = 2ms)...";
+
+        ion1.setAttribute('cx', 215);
+        ion2.setAttribute('cx', 245);
+        setTimeout(() => {
+          statusEl.innerText = "Status: Co-trapped in single well. Ready for MS entangling gate.";
+        }, 850);
+      } else {
+        ionShuttled = false;
+        statusEl.innerText = "Status: Splitting and returning ions to separate storage sites...";
+        ion1.setAttribute('cx', 75);
+        ion2.setAttribute('cx', 375);
+        setTimeout(() => {
+          statusEl.innerText = "Status: Vacuum Trapped securely. Ions isolated.";
+        }, 850);
+      }
+    }
+
+    function triggerIonMSGate() {
+      if (isIonGateRunning) return;
+      const statusEl = document.getElementById('ion-status-panel');
+      
+
+      if (!ionShuttled) {
+        triggerIonShuttle();
+        setTimeout(triggerIonMSGate, 1000);
+        return;
+      }
+
+      isIonGateRunning = true;
+      statusEl.innerText = "Status: detuned lasers firing. Coupling internal states to motional modes...";
+      
+      const spring = document.getElementById('phonon-bus-spring');
+      const ion1 = document.getElementById('ion-node-1');
+      const ion2 = document.getElementById('ion-node-2');
+
+
+      spring.style.opacity = '1';
+      
+
+      let count = 0;
+      const interval = setInterval(() => {
+        const offset = Math.sin(count * 1.5) * 3;
+        ion1.setAttribute('cx', 215 + offset);
+        ion2.setAttribute('cx', 245 + offset);
+        count++;
+      }, 50);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        spring.style.opacity = '0';
+        ion1.setAttribute('cx', 215);
+        ion2.setAttribute('cx', 245);
+        statusEl.innerText = "Status: M-S Gate complete. State entangled via Phonon Bus.";
+        isIonGateRunning = false;
+      }, 2500);
+    }
+
+    function triggerIonReadout() {
+      if (isIonGateRunning) return;
+      const statusEl = document.getElementById('ion-status-panel');
+      const ion1 = document.getElementById('ion-node-1');
+
+      statusEl.innerText = "Status: Shuttling Ion A to state-dependent fluorescence Readout Zone...";
+      
+
+      ion1.setAttribute('cx', 230);
+      ion1.setAttribute('cy', 50);
+
+
+      setTimeout(() => {
+        statusEl.innerText = "Status: Resonant detection beam on. State-dependent fluorescence is collected while other ions wait...";
+        document.getElementById('readout-laser').style.opacity = '1';
+        document.getElementById('fluorescence-glow').style.opacity = '1';
+      }, 1000);
+
+
+      setTimeout(() => {
+        statusEl.innerText = "Status: Measurement finished. Relieving lasers and returning...";
+        document.getElementById('readout-laser').style.opacity = '0';
+        document.getElementById('fluorescence-glow').style.opacity = '0';
+        
+
+        ion1.setAttribute('cx', ionShuttled ? 215 : 75);
+        ion1.setAttribute('cy', 110);
+      }, 3500);
+    }
+
+    // =========================================================================
+
+    // =========================================================================
+    function updateExperimentImage(expId, mode) {
+      const img = document.getElementById(`img-exp${expId}`);
+      const fallback = document.getElementById(`fallback-exp${expId}`);
+      if (!img || !fallback) return;
+
+      let src = "";
+      if (expId === 1) {
+        src = mode === 'builtin' ? 'results/builtin/exp1_pl_vs_p.png' : 'results/compiler/exp1_pl_vs_p.png';
+      } else if (expId === 2) {
+        src = mode === 'builtin' ? 'results/builtin/exp2_pl_vs_d.png' : 'results/compiler/exp2_pl_vs_d.png';
+      } else if (expId === 4) {
+        src = 'results/exp4_qldpc_vs_surface.png';
+      }
+
+
+      img.onerror = function() {
+
+        img.style.display = 'none';
+        fallback.style.display = 'block';
+        if (expId === 1) drawExp1Fallback(mode);
+        if (expId === 2) drawExp2Fallback(mode);
+        if (expId === 4) drawExp4Fallback();
+      };
+
+      img.onload = function() {
+        img.style.display = 'block';
+        fallback.style.display = 'none';
+      };
+
+      img.src = src;
+    }
+
+
+    function drawExp1Fallback(mode) {
+      const svg = document.getElementById('chart-exp1-svg');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+      const data = {
+        builtin: [
+          { name: 'Superconducting', pts: [[0.3, 1.91e-5], [1.1, 8.36e-4], [3.0, 1.35e-2]], color: '#2563eb' },
+          { name: 'Neutral Atom', pts: [[0.3, 8.50e-5], [1.1, 3.41e-3], [3.0, 4.20e-2]], color: '#d97706' },
+          { name: 'Trapped Ion', pts: [[0.3, 1.68e-6], [1.1, 7.17e-5], [3.0, 1.29e-3]], color: '#9333ea' }
+        ],
+        compiler: [
+          { name: 'Superconducting', pts: [[0.3, 1.34e-3], [1.1, 3.28e-3], [3.0, 6.23e-3]], color: '#2563eb' },
+          { name: 'Neutral Atom', pts: [[0.3, 1.09e-2], [1.1, 3.47e-2], [3.0, 1.03e-1]], color: '#d97706' },
+          { name: 'Trapped Ion', pts: [[0.3, 1.49e-3], [1.1, 3.39e-3], [3.0, 9.39e-3]], color: '#9333ea' }
+        ]
+      };
+
+      const activeSet = data[mode];
+      const margin = { top: 20, right: 80, bottom: 35, left: 45 };
+      const width = 320, height = 220;
+
+      const xScale = val => margin.left + ((val - 0.3) / 2.7) * (width - margin.left - margin.right);
+      const yScale = val => {
+        const logVal = Math.log10(val);
+        const logMin = -6, logMax = 0;
+        return margin.top + (1 - (logVal - logMin) / (logMax - logMin)) * (height - margin.top - margin.bottom);
+      };
+
+      let axisHtml = `<g stroke="#cbd5e1" stroke-width="1">`;
+      [0.3, 1.0, 2.0, 3.0].forEach(x => {
+        const px = xScale(x);
+        axisHtml += `<line x1="${px}" y1="${margin.top}" x2="${px}" y2="${height - margin.bottom}" stroke-dasharray="2 2" />`;
+        axisHtml += `<text x="${px}" y="${height - margin.bottom + 12}" font-size="8" fill="#64748b" text-anchor="middle">${x}x</text>`;
+      });
+      [-6, -5, -4, -3, -2, -1, 0].forEach(exp => {
+        const py = yScale(Math.pow(10, exp));
+        axisHtml += `<line x1="${margin.left}" y1="${py}" x2="${width - margin.right}" y2="${py}" stroke-dasharray="2 2" />`;
+        axisHtml += `<text x="${margin.left - 6}" y="${py + 3}" font-size="7" fill="#64748b" text-anchor="end">10<tspan baseline-shift="super" font-size="5">${exp}</tspan></text>`;
+      });
+      axisHtml += `</g>`;
+
+      axisHtml += `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#475569" stroke-width="1.5"/>`;
+      axisHtml += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#475569" stroke-width="1.5"/>`;
+
+      let plotHtml = '';
+      let legendHtml = '';
+      
+      activeSet.forEach((series, idx) => {
+        let pathD = '';
+        series.pts.forEach((pt, pIdx) => {
+          const px = xScale(pt[0]);
+          const py = yScale(pt[1]);
+          if (pIdx === 0) pathD += `M ${px} ${py}`;
+          else pathD += ` L ${px} ${py}`;
+          plotHtml += `<circle cx="${px}" cy="${py}" r="3.5" fill="${series.color}" stroke="#fff" stroke-width="1"/>`;
+        });
+
+        plotHtml += `<path d="${pathD}" fill="none" stroke="${series.color}" stroke-width="2" />`;
+
+        const legY = margin.top + idx * 15;
+        legendHtml += `
+          <g transform="translate(${width - margin.right + 5}, ${legY})">
+            <line x1="0" y1="4" x2="10" y2="4" stroke="${series.color}" stroke-width="2"/>
+            <circle cx="5" cy="4" r="2.5" fill="${series.color}"/>
+            <text x="13" y="7" font-size="7" font-weight="bold" fill="#475569">${series.name}</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = axisHtml + plotHtml + legendHtml;
+    }
+
+
+    function drawExp2Fallback(mode) {
+      const svg = document.getElementById('chart-exp2-svg');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+      const data = {
+        builtin: [
+          { name: 'Superconducting', pts: [[3, 3.05e-3], [5, 6.68e-4], [7, 1.52e-4], [9, 4.58e-5]], color: '#2563eb' },
+          { name: 'Neutral Atom', pts: [[3, 1.53e-4], [5, 1.04e-5], [7, 1.06e-6], [9, 3.33e-8]], color: '#d97706' },
+          { name: 'Trapped Ion', pts: [[3, 5.24e-4], [5, 4.86e-5], [7, 4.64e-6], [9, 4.78e-7]], color: '#9333ea' }
+        ],
+        compiler: [
+          { name: 'Superconducting', pts: [[3, 4.71e-3], [5, 2.57e-3], [7, 2.66e-3], [9, 2.64e-3]], color: '#2563eb' },
+          { name: 'Neutral Atom', pts: [[3, 5.66e-3], [5, 8.48e-3], [7, 5.72e-3], [9, 5.99e-3]], color: '#d97706' },
+          { name: 'Trapped Ion', pts: [[3, 5.39e-3], [5, 3.24e-3], [7, 3.03e-3], [9, 3.25e-3]], color: '#9333ea' }
+        ]
+      };
+
+      const activeSet = data[mode];
+      const margin = { top: 20, right: 80, bottom: 35, left: 45 };
+      const width = 320, height = 220;
+
+      const xScale = val => margin.left + ((val - 3) / 6) * (width - margin.left - margin.right);
+      const yScale = val => {
+        const logVal = Math.log10(val);
+        const logMin = -8, logMax = -1;
+        return margin.top + (1 - (logVal - logMin) / (logMax - logMin)) * (height - margin.top - margin.bottom);
+      };
+
+      let axisHtml = `<g stroke="#cbd5e1" stroke-width="1">`;
+      [3, 5, 7, 9].forEach(x => {
+        const px = xScale(x);
+        axisHtml += `<line x1="${px}" y1="${margin.top}" x2="${px}" y2="${height - margin.bottom}" stroke-dasharray="2 2" />`;
+        axisHtml += `<text x="${px}" y="${height - margin.bottom + 12}" font-size="8" fill="#64748b" text-anchor="middle">d = ${x}</text>`;
+      });
+      [-8, -7, -6, -5, -4, -3, -2, -1].forEach(exp => {
+        const py = yScale(Math.pow(10, exp));
+        axisHtml += `<line x1="${margin.left}" y1="${py}" x2="${width - margin.right}" y2="${py}" stroke-dasharray="2 2" />`;
+        axisHtml += `<text x="${margin.left - 6}" y="${py + 3}" font-size="7" fill="#64748b" text-anchor="end">10<tspan baseline-shift="super" font-size="5">${exp}</tspan></text>`;
+      });
+      axisHtml += `</g>`;
+
+      axisHtml += `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#475569" stroke-width="1.5"/>`;
+      axisHtml += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#475569" stroke-width="1.5"/>`;
+
+      let plotHtml = '';
+      let legendHtml = '';
+
+      activeSet.forEach((series, idx) => {
+        let pathD = '';
+        series.pts.forEach((pt, pIdx) => {
+          const px = xScale(pt[0]);
+          const py = yScale(pt[1]);
+          if (pIdx === 0) pathD += `M ${px} ${py}`;
+          else pathD += ` L ${px} ${py}`;
+          plotHtml += `<circle cx="${px}" cy="${py}" r="3.5" fill="${series.color}" stroke="#fff" stroke-width="1"/>`;
+        });
+
+        plotHtml += `<path d="${pathD}" fill="none" stroke="${series.color}" stroke-width="2" />`;
+
+        const legY = margin.top + idx * 15;
+        legendHtml += `
+          <g transform="translate(${width - margin.right + 5}, ${legY})">
+            <line x1="0" y1="4" x2="10" y2="4" stroke="${series.color}" stroke-width="2"/>
+            <circle cx="5" cy="4" r="2.5" fill="${series.color}"/>
+            <text x="13" y="7" font-size="7" font-weight="bold" fill="#475569">${series.name}</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = axisHtml + plotHtml + legendHtml;
+    }
+
+
+    function drawExp4Fallback() {
+      const svg = document.getElementById('chart-exp4-svg');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+      // p_2Q sweep: [5e-4, 1e-3, 2e-3, 4e-3, 6e-3, 8e-3, 1e-2]
+      const data = [
+        { name: 'Surface d=3', pts: [[5e-4, 5.73e-3], [1e-3, 5.22e-3], [2e-3, 8.13e-3], [4e-3, 1.21e-2], [6e-3, 1.96e-2], [8e-3, 2.69e-2], [1e-2, 2.79e-2]], color: '#1e3a8a' },
+        { name: 'Surface d=5', pts: [[5e-4, 6.25e-3], [1e-3, 8.48e-3], [2e-3, 1.12e-2], [4e-3, 2.25e-2], [6e-3, 3.36e-2], [8e-3, 4.52e-2], [1e-2, 4.98e-2]], color: '#2563eb' },
+        { name: 'BB qLDPC', pts: [[5e-4, 1.37e-2], [1e-3, 4.37e-2], [2e-3, 2.82e-2], [4e-3, 8.79e-2], [6e-3, 6.03e-2], [8e-3, 1.89e-1], [1e-2, 2.29e-1]], color: '#b45309' }
+      ];
+
+      const margin = { top: 25, right: 92, bottom: 42, left: 45 };
+      const width = 320, height = 220;
+
+      const xMin = Math.log10(5e-4), xMax = Math.log10(1e-2);
+      const xScale = val => margin.left + ((Math.log10(val) - xMin) / (xMax - xMin)) * (width - margin.left - margin.right);
+      const yScale = val => {
+        const logVal = Math.log10(val);
+        const logMin = -3, logMax = 0;
+        return margin.top + (1 - (logVal - logMin) / (logMax - logMin)) * (height - margin.top - margin.bottom);
+      };
+
+      // x tick labels in percent form for compactness
+      const xticks = [[5e-4, '0.05%'], [1e-3, '0.1%'], [2e-3, '0.2%'], [4e-3, '0.4%'], [1e-2, '1%']];
+
+      let axisHtml = `<g stroke="#cbd5e1" stroke-width="1">`;
+      xticks.forEach(([x, lbl]) => {
+        const px = xScale(x);
+        axisHtml += `<line x1="${px}" y1="${margin.top}" x2="${px}" y2="${height - margin.bottom}" stroke-dasharray="2 2" />`;
+        axisHtml += `<text x="${px}" y="${height - margin.bottom + 12}" font-size="8" fill="#64748b" text-anchor="middle">${lbl}</text>`;
+      });
+      [-3, -2, -1, 0].forEach(exp => {
+        const py = yScale(Math.pow(10, exp));
+        axisHtml += `<line x1="${margin.left}" y1="${py}" x2="${width - margin.right}" y2="${py}" stroke-dasharray="2 2" />`;
+        axisHtml += `<text x="${margin.left - 6}" y="${py + 3}" font-size="7" fill="#64748b" text-anchor="end">10<tspan baseline-shift="super" font-size="5">${exp}</tspan></text>`;
+      });
+      axisHtml += `</g>`;
+
+      axisHtml += `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#475569" stroke-width="1.5"/>`;
+      axisHtml += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#475569" stroke-width="1.5"/>`;
+      axisHtml += `<text x="${margin.left + (width - margin.left - margin.right) / 2}" y="${height - 6}" font-size="8.5" font-weight="bold" fill="#334155" text-anchor="middle">two-qubit gate error p₂Q</text>`;
+
+      let plotHtml = '';
+      let legendHtml = '';
+
+      data.forEach((series, idx) => {
+        let pathD = '';
+        series.pts.forEach((pt, pIdx) => {
+          const px = xScale(pt[0]);
+          const py = yScale(pt[1]);
+          if (pIdx === 0) pathD += `M ${px} ${py}`;
+          else pathD += ` L ${px} ${py}`;
+          plotHtml += `<circle cx="${px}" cy="${py}" r="3" fill="${series.color}" stroke="#fff" stroke-width="1"/>`;
+        });
+
+        plotHtml += `<path d="${pathD}" fill="none" stroke="${series.color}" stroke-width="2" />`;
+
+        const legY = margin.top + idx * 15;
+        legendHtml += `
+          <g transform="translate(${width - margin.right + 5}, ${legY})">
+            <line x1="0" y1="4" x2="10" y2="4" stroke="${series.color}" stroke-width="2"/>
+            <circle cx="5" cy="4" r="2.5" fill="${series.color}"/>
+            <text x="13" y="7" font-size="6.5" font-weight="bold" fill="#475569">${series.name}</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = axisHtml + plotHtml + legendHtml;
+    }
+
+
+    function toggleExpChart(expId, mode) {
+      if (expId === 1) {
+        currentExp1Mode = mode;
+        document.getElementById('btn-chart-1-builtin').className = mode === 'builtin' ? "px-2.5 py-0.5 rounded text-xs font-bold bg-beamerblue-dark text-white shadow" : "px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 hover:bg-slate-300";
+        document.getElementById('btn-chart-1-compiler').className = mode === 'compiler' ? "px-2.5 py-0.5 rounded text-xs font-bold bg-beamerblue-dark text-white shadow" : "px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 hover:bg-slate-300";
+        updateExperimentImage(1, mode);
+        updateExpConclusion(1, mode);
+      } else if (expId === 2) {
+        currentExp2Mode = mode;
+        document.getElementById('btn-chart-2-builtin').className = mode === 'builtin' ? "px-2.5 py-0.5 rounded text-xs font-bold bg-beamerblue-dark text-white shadow" : "px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 hover:bg-slate-300";
+        document.getElementById('btn-chart-2-compiler').className = mode === 'compiler' ? "px-2.5 py-0.5 rounded text-xs font-bold bg-beamerblue-dark text-white shadow" : "px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 hover:bg-slate-300";
+        updateExperimentImage(2, mode);
+        updateExpConclusion(2, mode);
+      }
+    }
+
+
+    function previewExperiment(id) {
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`btn-exp-${i}`);
+        if (btn) {
+          if (i === id) {
+            btn.className = "p-2.5 border border-beamerblue-dark bg-beamerblue-light text-beamerblue-dark text-sm font-extrabold rounded text-left shadow-sm";
+          } else {
+            btn.className = "p-2.5 border border-gray-200 text-gray-700 bg-white text-sm font-bold rounded hover:bg-slate-50 transition text-left";
+          }
+        }
+      }
+      
+      const descContainer = document.getElementById('exp-preview-desc');
+      descContainer.innerHTML = `
+        <p class="font-bold text-beamerblue-dark mb-1">Experiment ${id} Outline:</p>
+        <p class="text-[12px] leading-normal text-gray-700">${expPreviews[id]}</p>
+      `;
+      
+
+      safeRenderMath(descContainer);
+    }
+  </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

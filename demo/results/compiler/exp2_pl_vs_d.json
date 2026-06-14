@@ -1,0 +1,182 @@
+{
+  "superconducting": {
+    "results": [
+      {
+        "platform": "superconducting",
+        "d": 3,
+        "rounds": 3,
+        "p_scale": 0.001,
+        "PL": 0.0047109126658059775,
+        "PL_std": 0.00039912020191348874,
+        "P_run": 0.014,
+        "shots": 10000,
+        "logical_errors": 140,
+        "hit_max_shots": false,
+        "time_seconds": 0.07960880000609905
+      },
+      {
+        "platform": "superconducting",
+        "d": 5,
+        "rounds": 5,
+        "p_scale": 0.001,
+        "PL": 0.0025662068200127397,
+        "PL_std": 0.00022861003966914798,
+        "P_run": 0.0127,
+        "shots": 10000,
+        "logical_errors": 127,
+        "hit_max_shots": false,
+        "time_seconds": 0.1420255999546498
+      },
+      {
+        "platform": "superconducting",
+        "d": 7,
+        "rounds": 7,
+        "p_scale": 0.001,
+        "PL": 0.002656246749214941,
+        "PL_std": 0.00019769556264397434,
+        "P_run": 0.0183,
+        "shots": 10000,
+        "logical_errors": 183,
+        "hit_max_shots": false,
+        "time_seconds": 0.27464240009430796
+      },
+      {
+        "platform": "superconducting",
+        "d": 9,
+        "rounds": 9,
+        "p_scale": 0.001,
+        "PL": 0.0026441358109097757,
+        "PL_std": 0.00017487919116963981,
+        "P_run": 0.0233,
+        "shots": 10000,
+        "logical_errors": 233,
+        "hit_max_shots": false,
+        "time_seconds": 0.5109104999573901
+      }
+    ],
+    "lambda": {
+      "lambda": 679444128.2472092,
+      "lambda_std": 11773883.68025134
+    }
+  },
+  "neutral_atom": {
+    "results": [
+      {
+        "platform": "neutral_atom",
+        "d": 3,
+        "rounds": 3,
+        "p_scale": 0.001,
+        "PL": 0.00566391766220764,
+        "PL_std": 0.0004382780360660168,
+        "P_run": 0.0168,
+        "shots": 10000,
+        "logical_errors": 168,
+        "hit_max_shots": false,
+        "time_seconds": 0.08387279999442399
+      },
+      {
+        "platform": "neutral_atom",
+        "d": 5,
+        "rounds": 5,
+        "p_scale": 0.001,
+        "PL": 0.008483003064676642,
+        "PL_std": 0.0004246753786139672,
+        "P_run": 0.041,
+        "shots": 10000,
+        "logical_errors": 410,
+        "hit_max_shots": false,
+        "time_seconds": 0.16536330000963062
+      },
+      {
+        "platform": "neutral_atom",
+        "d": 7,
+        "rounds": 7,
+        "p_scale": 0.001,
+        "PL": 0.0057212658180372244,
+        "PL_std": 0.00029524012793531994,
+        "P_run": 0.0387,
+        "shots": 10000,
+        "logical_errors": 387,
+        "hit_max_shots": false,
+        "time_seconds": 0.32190469990018755
+      },
+      {
+        "platform": "neutral_atom",
+        "d": 9,
+        "rounds": 9,
+        "p_scale": 0.001,
+        "PL": 0.0059902980316702825,
+        "PL_std": 0.00027018225319970133,
+        "P_run": 0.0514,
+        "shots": 10000,
+        "logical_errors": 514,
+        "hit_max_shots": false,
+        "time_seconds": 0.6022881999379024
+      }
+    ],
+    "lambda": {
+      "lambda": 942319409.613146,
+      "lambda_std": 20038417.212364003
+    }
+  },
+  "ion_trap": {
+    "results": [
+      {
+        "platform": "ion_trap",
+        "d": 3,
+        "rounds": 3,
+        "p_scale": 0.001,
+        "PL": 0.005391255675129936,
+        "PL_std": 0.00042741790796100714,
+        "P_run": 0.016,
+        "shots": 10000,
+        "logical_errors": 160,
+        "hit_max_shots": false,
+        "time_seconds": 0.07583710004109889
+      },
+      {
+        "platform": "ion_trap",
+        "d": 5,
+        "rounds": 5,
+        "p_scale": 0.001,
+        "PL": 0.003241764487766363,
+        "PL_std": 0.0002575652390555976,
+        "P_run": 0.016,
+        "shots": 10000,
+        "logical_errors": 160,
+        "hit_max_shots": false,
+        "time_seconds": 0.14106499997433275
+      },
+      {
+        "platform": "ion_trap",
+        "d": 7,
+        "rounds": 7,
+        "p_scale": 0.001,
+        "PL": 0.0030258110490279377,
+        "PL_std": 0.00021143961245660882,
+        "P_run": 0.0208,
+        "shots": 10000,
+        "logical_errors": 208,
+        "hit_max_shots": false,
+        "time_seconds": 0.27631049999035895
+      },
+      {
+        "platform": "ion_trap",
+        "d": 9,
+        "rounds": 9,
+        "p_scale": 0.001,
+        "PL": 0.0032498920085412553,
+        "PL_std": 0.00019478593580159453,
+        "P_run": 0.0285,
+        "shots": 10000,
+        "logical_errors": 285,
+        "hit_max_shots": false,
+        "time_seconds": 0.5141545999795198
+      }
+    ],
+    "lambda": {
+      "lambda": 785478955.3414763,
+      "lambda_std": 14260456.340053258
+    }
+  }
+}

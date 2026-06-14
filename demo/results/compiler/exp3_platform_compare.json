@@ -1,0 +1,180 @@
+{
+  "pl_vs_d": {
+    "superconducting": [
+      {
+        "platform": "superconducting",
+        "d": 3,
+        "rounds": 3,
+        "p_scale": 1.0,
+        "PL": 0.004846831741602886,
+        "PL_std": 0.0004049218598263661,
+        "P_run": 0.0144,
+        "shots": 10000,
+        "logical_errors": 144,
+        "hit_max_shots": false,
+        "time_seconds": 0.07638669991865754
+      },
+      {
+        "platform": "superconducting",
+        "d": 5,
+        "rounds": 5,
+        "p_scale": 1.0,
+        "PL": 0.00287282332173322,
+        "PL_std": 0.00024214670838861333,
+        "P_run": 0.0142,
+        "shots": 10000,
+        "logical_errors": 142,
+        "hit_max_shots": false,
+        "time_seconds": 0.13402949995361269
+      },
+      {
+        "platform": "superconducting",
+        "d": 7,
+        "rounds": 7,
+        "p_scale": 1.0,
+        "PL": 0.002273639766817548,
+        "PL_std": 0.00018251211668030774,
+        "P_run": 0.0157,
+        "shots": 10000,
+        "logical_errors": 157,
+        "hit_max_shots": false,
+        "time_seconds": 0.26651730004232377
+      },
+      {
+        "platform": "superconducting",
+        "d": 9,
+        "rounds": 9,
+        "p_scale": 1.0,
+        "PL": 0.0025630407591678006,
+        "PL_std": 0.00017206934785954665,
+        "P_run": 0.0226,
+        "shots": 10000,
+        "logical_errors": 226,
+        "hit_max_shots": false,
+        "time_seconds": 0.5047082999954
+      }
+    ],
+    "neutral_atom": [
+      {
+        "platform": "neutral_atom",
+        "d": 3,
+        "rounds": 3,
+        "p_scale": 1.0,
+        "PL": 0.019554811178065512,
+        "PL_std": 0.0008328457514088773,
+        "P_run": 0.0564,
+        "shots": 10000,
+        "logical_errors": 564,
+        "hit_max_shots": false,
+        "time_seconds": 0.07771410001441836
+      },
+      {
+        "platform": "neutral_atom",
+        "d": 5,
+        "rounds": 5,
+        "p_scale": 1.0,
+        "PL": 0.029680743855854397,
+        "PL_std": 0.0008641846893009498,
+        "P_run": 0.1318,
+        "shots": 10000,
+        "logical_errors": 1318,
+        "hit_max_shots": false,
+        "time_seconds": 0.15724369999952614
+      },
+      {
+        "platform": "neutral_atom",
+        "d": 7,
+        "rounds": 7,
+        "p_scale": 1.0,
+        "PL": 0.02760154135541454,
+        "PL_std": 0.0007436973213611889,
+        "P_run": 0.164,
+        "shots": 10000,
+        "logical_errors": 1640,
+        "hit_max_shots": false,
+        "time_seconds": 0.34109080000780523
+      },
+      {
+        "platform": "neutral_atom",
+        "d": 9,
+        "rounds": 9,
+        "p_scale": 1.0,
+        "PL": 0.02764135928729522,
+        "PL_std": 0.0007008847884703625,
+        "P_run": 0.2003,
+        "shots": 10000,
+        "logical_errors": 2003,
+        "hit_max_shots": false,
+        "time_seconds": 0.6607720999745652
+      }
+    ],
+    "ion_trap": [
+      {
+        "platform": "ion_trap",
+        "d": 3,
+        "rounds": 3,
+        "p_scale": 1.0,
+        "PL": 0.005698021565892164,
+        "PL_std": 0.0004396188004185359,
+        "P_run": 0.0169,
+        "shots": 10000,
+        "logical_errors": 169,
+        "hit_max_shots": false,
+        "time_seconds": 0.08044550009071827
+      },
+      {
+        "platform": "ion_trap",
+        "d": 5,
+        "rounds": 5,
+        "p_scale": 1.0,
+        "PL": 0.0029956820178560495,
+        "PL_std": 0.0002473787693378152,
+        "P_run": 0.0148,
+        "shots": 10000,
+        "logical_errors": 148,
+        "hit_max_shots": false,
+        "time_seconds": 0.14865210000425577
+      },
+      {
+        "platform": "ion_trap",
+        "d": 7,
+        "rounds": 7,
+        "p_scale": 1.0,
+        "PL": 0.003070269752310506,
+        "PL_std": 0.00021304065823667231,
+        "P_run": 0.0211,
+        "shots": 10000,
+        "logical_errors": 211,
+        "hit_max_shots": false,
+        "time_seconds": 0.2560358000919223
+      },
+      {
+        "platform": "ion_trap",
+        "d": 9,
+        "rounds": 9,
+        "p_scale": 1.0,
+        "PL": 0.003156313422720991,
+        "PL_std": 0.00019182241218200038,
+        "P_run": 0.0277,
+        "shots": 10000,
+        "logical_errors": 277,
+        "hit_max_shots": false,
+        "time_seconds": 0.4926401999546215
+      }
+    ]
+  },
+  "d_needed_for_pl_target": {
+    "superconducting": {
+      "d_min": null,
+      "pl_at_d": 0.0026083947315683753
+    },
+    "neutral_atom": {
+      "d_min": null,
+      "pl_at_d": 0.005968202268520295
+    },
+    "ion_trap": {
+      "d_min": null,
+      "pl_at_d": 0.003192808648420864
+    }
+  }
+}
